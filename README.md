@@ -1,6 +1,6 @@
 # Coffee-Concepts
 <div align="center"> <br/> 
-📚 StudyStream
+📚 Coffee-Concepts
 Study Together. Stay Motivated. Get Things Done.
 A live video study platform where focus meets community — join real-time study rooms, stay accountable with peers, and make learning a shared experience.
 <br/> 
@@ -10,8 +10,8 @@ A live video study platform where focus meets community — join real-time study
 
 <br/> </div> 
 
-🧠 What is StudyStream?
-StudyStream is a web-based study motivation platform that brings the library vibe to your screen. Users join live video study rooms with cameras on, work alongside strangers and friends, and hold each other accountable — silently, powerfully.
+🧠 What is Coffee-Concepts?
+Coffee-Concepts is a web-based study motivation platform that brings the library vibe to your screen. Users join live video study rooms with cameras on, work alongside strangers and friends, and hold each other accountable — silently, powerfully.
 No distractions. No pressure. Just a room full of people who also need to get stuff done.
 
 
@@ -76,7 +76,7 @@ Deployment     → Vercel (frontend) + Railway/Render (backend)
  
 
 📁 Project Structure
-studystream/
+Coffee-Concepts/
 ├── client/                  # Frontend (React/Next.js)
 │   ├── components/
 │   │   ├── Room/            # Video room UI
@@ -103,8 +103,8 @@ Prerequisites
     • MongoDB or PostgreSQL instance
 Installation
 # Clone the repo
-git clone https://github.com/yourusername/studystream.git
-cd studystream
+git clone https://github.com/yourusername/Coffee-Concepts.git
+cd Coffee-Concepts
 
 # Install dependencies
 cd client && npm install
@@ -177,5 +177,5 @@ This project is licensed under the MIT License — see the LICENSE file for deta
 
 <div align="center"> 
 Made with ❤️ for students, by students.
-⭐ Star this repo if StudyStream helped you focus!
+⭐ Star this repo if Coffee-Concepts helped you focus!
 </div>
