@@ -1,0 +1,49 @@
+// This is your Prisma schema file.
+// Run `npx prisma migrate dev --name init` locally to apply it.
+// On Railway/Render run `npx prisma migrate deploy` (via package.json script).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  username        String
+  email           String   @unique
+  passwordHash    String
+  gender          String
+  genderLocked    Boolean  @default(true)
+  aadhaarVerified Boolean  @default(false)
+  aadhaarHash     String?  @unique   // SHA-256 of "aadhaar:v1:<digits>"; null if not verified
+  isAdmin         Boolean  @default(false)
+  banned          Boolean  @default(false)
+  chatRestrictedUntil DateTime?
+  avatar          String?
+  personalNote    String   @default("")
+  createdAt       DateTime @default(now())
+  // stats and todos are stored as flexible JSON blobs
+  stats           Json     @default("{}")
+  todos           Json     @default("[]")
+
+  reportsMade     Report[] @relation("ReportsMade")
+  reportsReceived Report[] @relation("ReportsReceived")
+}
+
+model Report {
+  id             String   @id @default(uuid())
+  createdAt      DateTime @default(now())
+  message        String
+  roomId         String?
+  status         String   @default("open") // open | resolved
+
+  reporterId     String
+  reporter       User     @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reportedUserId String?
+  reported       User?    @relation("ReportsReceived", fields: [reportedUserId], references: [id], onDelete: SetNull)
+}

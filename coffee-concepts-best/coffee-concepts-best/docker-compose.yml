@@ -1,0 +1,76 @@
+version: '3.9'
+
+services:
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       coffeeconcepts
+      POSTGRES_USER:     cc
+      POSTGRES_PASSWORD: cc_dev
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cc -d coffeeconcepts"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── DB migrations (run once, then exits) ─────────────────────────────────────
+  migrate:
+    build: .
+    command: npx prisma migrate deploy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://cc:cc_dev@postgres:5432/coffeeconcepts
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── API Server (scale this freely) ───────────────────────────────────────────
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://cc:cc_dev@postgres:5432/coffeeconcepts
+      REDIS_URL:    redis://redis:6379
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  # ── Timer Worker (keep at exactly 1 replica) ──────────────────────────────────
+  timer:
+    build: .
+    command: node server/timerWorker.js
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://cc:cc_dev@postgres:5432/coffeeconcepts
+      REDIS_URL:    redis://redis:6379
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  redis_data:

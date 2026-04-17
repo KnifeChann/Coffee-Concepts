@@ -1,0 +1,2084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Coffee & Concepts</title>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0c0a; --bg2:#161310; --bg3:#1e1a16;
+  --card:#221e19; --card2:#2a2520;
+  --border:rgba(255,215,130,.08); --bord2:rgba(255,215,130,.18);
+  --gold:#c9933a; --gold2:#e8b56a;
+  --cream:#f0e4cc; --muted:#7a6e62; --muted2:#9a8e82;
+  --green:#4a7c5c; --green2:#5ca872;
+  --red:#8c3c3c; --red2:#b04848;
+  --blue:#3a5c8c; --blue2:#4e78b5;
+  --pink:#c86e8a;
+  --r:14px; --rsm:8px;
+  --fh:'Playfair Display',Georgia,serif;
+  --fb:'DM Sans',sans-serif;
+  --t:.2s ease;
+}
+body{font-family:var(--fb);background:var(--bg);color:var(--cream);min-height:100vh;overflow-x:hidden}
+input,button,select,textarea{font-family:var(--fb)}
+button{cursor:pointer}
+
+/* THEMES */
+body.tc{--bg:#110d08;--bg2:#170f09;--bg3:#1f1509}
+body.tn{--bg:#080a12;--bg2:#0c0e18;--bg3:#121520;--gold:#7e9fd4;--gold2:#a0bfee}
+body.tm{--bg:#101010;--bg2:#161616;--bg3:#1c1c1c;--gold:#aaa;--gold2:#d8d8d8}
+body.tf{--bg:#080e0a;--bg2:#0c130e;--bg3:#111a12;--gold:#5a9e6a;--gold2:#7dc48e}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:.6rem 1.4rem;border-radius:var(--rsm);font-size:.88rem;font-weight:500;border:1px solid transparent;transition:all var(--t);white-space:nowrap;cursor:pointer}
+.btn-p{background:var(--gold);color:#1a1208;border-color:var(--gold)}
+.btn-p:hover{background:var(--gold2);transform:translateY(-1px)}
+.btn-g{background:transparent;color:var(--cream);border-color:var(--bord2)}
+.btn-g:hover{background:var(--card2);border-color:var(--gold);color:var(--gold2)}
+.btn-sm{padding:.38rem .85rem;font-size:.8rem}
+.btn-ico{padding:.45rem;min-width:34px;justify-content:center}
+.btn-ok{background:rgba(74,140,92,.15);border:1px solid rgba(74,140,92,.3);color:var(--green2);border-radius:6px;padding:4px 10px;font-size:.78rem;cursor:pointer;transition:all var(--t)}
+.btn-ok:hover{background:rgba(74,140,92,.3)}
+.btn-no{background:rgba(140,60,60,.12);border:1px solid rgba(140,60,60,.25);color:var(--red2);border-radius:6px;padding:4px 10px;font-size:.78rem;cursor:pointer;transition:all var(--t)}
+.btn-no:hover{background:rgba(140,60,60,.25)}
+
+/* INPUTS */
+input[type=text],input[type=email],input[type=password],textarea,select{
+  background:var(--card2);border:1px solid var(--border);border-radius:var(--rsm);
+  color:var(--cream);padding:.55rem .85rem;font-size:.88rem;outline:none;width:100%;
+  transition:border-color var(--t)
+}
+input:focus,textarea:focus,select:focus{border-color:var(--gold)}
+select option{background:var(--card2)}
+label{font-size:.8rem;color:var(--muted2);display:block;margin-bottom:4px}
+.fg{margin-bottom:.9rem}
+.ferr{font-size:.77rem;color:var(--red2);margin-top:3px;display:none}
+.ferr.show{display:block}
+
+/* BADGES */
+.badge{font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:500;display:inline-flex;align-items:center}
+.bn{background:rgba(201,147,58,.15);color:var(--gold2);border:1px solid rgba(201,147,58,.25)}
+.bf{background:rgba(200,110,138,.15);color:var(--pink);border:1px solid rgba(200,110,138,.25)}
+.bm{background:rgba(78,120,181,.15);color:var(--blue2);border:1px solid rgba(78,120,181,.25)}
+
+/* TOGGLE */
+.tog{width:38px;height:21px;border-radius:11px;background:var(--bg3);border:1px solid var(--bord2);cursor:pointer;position:relative;transition:background var(--t);flex-shrink:0}
+.tog.on{background:var(--gold);border-color:var(--gold)}
+.tog::after{content:'';position:absolute;width:15px;height:15px;border-radius:50%;background:var(--cream);top:2px;left:2px;transition:transform var(--t)}
+.tog.on::after{transform:translateX(17px)}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem}
+
+/* STAT CARD */
+.sc{background:var(--card2);border:1px solid var(--border);border-radius:var(--rsm);padding:.75rem;text-align:center}
+.sc-n{font-family:var(--fh);font-size:1.6rem;color:var(--gold2);line-height:1}
+.sc-l{font-size:.7rem;color:var(--muted);margin-top:4px}
+
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:900;align-items:center;justify-content:center;display:none}
+.mo.open{display:flex}
+.md{background:var(--card);border:1px solid var(--bord2);border-radius:var(--r);padding:2rem;max-width:430px;width:92%;animation:sI .25s ease;max-height:92vh;overflow-y:auto}
+@keyframes sI{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.mt{font-family:var(--fh);font-size:1.5rem;color:var(--cream);margin-bottom:.75rem}
+.mb{color:var(--muted2);font-size:.9rem;line-height:1.6;margin-bottom:1.25rem}
+
+/* NOTIFICATIONS */
+#nstack{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.nc{background:var(--card2);border:1px solid var(--bord2);border-radius:var(--r);padding:.9rem 1.1rem;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:nIn .3s ease;pointer-events:all}
+@keyframes nIn{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+.nt{font-size:.84rem;font-weight:500;color:var(--cream);margin-bottom:.2rem}
+.nb{font-size:.77rem;color:var(--muted2);margin-bottom:.65rem}
+.na{display:flex;gap:6px}
+
+/* ── LANDING ── */
+#sl{justify-content:center;align-items:center;text-align:center;
+  background:radial-gradient(ellipse at 25% 20%,rgba(201,147,58,.06) 0%,transparent 55%),
+             radial-gradient(ellipse at 78% 85%,rgba(74,140,92,.04) 0%,transparent 50%),var(--bg)}
+.ll{font-size:3.5rem;margin-bottom:1rem;animation:fl 4s ease-in-out infinite}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.lh{font-family:var(--fh);font-size:3.2rem;line-height:1.1;margin-bottom:.6rem}
+.lh em{color:var(--gold2);font-style:normal}
+.ls{color:var(--muted2);font-size:1rem;font-weight:300;margin-bottom:2rem;max-width:460px;line-height:1.7}
+.lbs{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:2.5rem}
+.lsts{display:flex;gap:2.5rem;justify-content:center;padding-top:1.5rem;border-top:1px solid var(--border)}
+.lsn{font-family:var(--fh);font-size:1.8rem;color:var(--gold2);display:block}
+.lsl{font-size:.75rem;color:var(--muted)}
+
+/* ── AUTH ── */
+#sa{justify-content:center;align-items:center;background:var(--bg)}
+.ab{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:2.5rem;width:380px;max-width:95vw}
+.al{font-family:var(--fh);font-size:1.4rem;color:var(--gold2);margin-bottom:1.5rem;text-align:center}
+.ats{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.5rem}
+.at{flex:1;padding:.65rem;text-align:center;font-size:.85rem;color:var(--muted2);cursor:pointer;border-bottom:2px solid transparent;transition:all var(--t)}
+.at.active{color:var(--gold2);border-bottom-color:var(--gold)}
+.ag{text-align:center;margin-top:1rem;font-size:.8rem;color:var(--muted)}
+.ag a{color:var(--gold2);cursor:pointer}
+
+/* ── LOBBY ── */
+#sb{background:var(--bg)}
+.lh2{padding:1rem 1.75rem;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{font-family:var(--fh);font-size:1.3rem;color:var(--gold2);display:flex;align-items:center;gap:8px}
+.lbody{flex:1;padding:1.75rem;max-width:1100px;margin:0 auto;width:100%}
+.stit{font-family:var(--fh);font-size:1.4rem;color:var(--cream);margin-bottom:1.25rem;display:flex;align-items:center;gap:10px}
+.stit::after{content:'';flex:1;height:1px;background:var(--border)}
+.rg{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-bottom:2.5rem}
+.rc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem;cursor:pointer;transition:all var(--t);position:relative;overflow:hidden}
+.rc:hover{border-color:var(--bord2);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.rc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.rc.neutral::before{background:var(--gold)}
+.rc.female::before{background:var(--pink)}
+.rc.male::before{background:var(--blue2)}
+.rc-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.9rem}
+.rn{font-family:var(--fh);font-size:1.05rem}
+.rsub{font-size:.78rem;color:var(--muted2);margin-top:2px}
+.rm{display:flex;align-items:center;gap:10px;font-size:.78rem;color:var(--muted)}
+.rb{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:10px}
+.rbf{height:100%;background:var(--gold);border-radius:2px;transition:width 1s linear}
+.rbl{font-size:.68rem;color:var(--muted);margin-top:3px;text-align:right}
+
+/* ── ROOM ── */
+#sr{background:var(--bg);overflow:hidden}
+.rtb{padding:.7rem 1.25rem;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.rtbl{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.rtbr{display:flex;align-items:center;gap:6px}
+.rtbn{font-family:var(--fh);font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rl{display:flex;flex:1;overflow:hidden;height:calc(100vh - 55px)}
+
+/* VIDEO */
+.va{flex:1;padding:1rem;overflow-y:auto;background:var(--bg)}
+.vg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.vt{background:var(--card2);border:1px solid var(--border);border-radius:var(--rsm);
+  aspect-ratio:4/3;position:relative;overflow:hidden;transition:border-color var(--t)}
+.vt.me{border-color:var(--gold)!important}
+.vt.ob{border-color:rgba(201,147,58,.4)}
+video.vtv{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:var(--rsm);transform:scaleX(-1)}
+.vta{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px}
+.vtav{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:500}
+.vtn{position:absolute;bottom:0;left:0;right:0;padding:5px 8px;background:rgba(10,8,6,.75);font-size:.72rem;display:flex;align-items:center;justify-content:space-between}
+.obp{position:absolute;top:6px;right:6px;background:rgba(201,147,58,.88);color:#1a1208;font-size:.6rem;font-weight:600;padding:2px 7px;border-radius:20px}
+.nocam{position:absolute;top:6px;left:6px;font-size:.65rem;color:var(--muted);background:rgba(0,0,0,.5);padding:2px 6px;border-radius:4px}
+.speaking-ring{position:absolute;inset:0;border-radius:var(--rsm);border:2px solid var(--green2);opacity:0;transition:opacity .2s;pointer-events:none}
+.speaking .speaking-ring{opacity:1}
+
+/* SIDE PANEL */
+.sp{width:290px;min-width:290px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.stabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.stab{flex:1;padding:.65rem 0;text-align:center;font-size:.76rem;color:var(--muted2);cursor:pointer;border-bottom:2px solid transparent;transition:all var(--t)}
+.stab.active{color:var(--gold2);border-bottom-color:var(--gold)}
+.spane{flex:1;overflow-y:auto;padding:1rem;display:none;flex-direction:column;gap:10px}
+.spane.active{display:flex}
+
+/* TIMER WIDGET */
+.tw{background:var(--card2);border:1px solid var(--bord2);border-radius:var(--r);padding:1.25rem;text-align:center}
+.tmode{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem}
+.tclock{font-family:var(--fh);font-size:3rem;color:var(--cream);letter-spacing:3px;line-height:1;margin-bottom:.75rem}
+.tclock.bk{color:var(--gold2)}
+.tprog{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:1rem}
+.tpf{height:100%;border-radius:2px;transition:width 1s linear}
+.tpf.fo{background:var(--green2)}
+.tpf.bk{background:var(--gold2)}
+.tbtns{display:flex;gap:8px;justify-content:center;margin-bottom:.75rem}
+.tbtn{padding:.4rem 1rem;border-radius:var(--rsm);font-size:.82rem;font-weight:500;cursor:pointer;border:1px solid var(--bord2);background:var(--card);color:var(--cream);transition:all var(--t);font-family:var(--fb)}
+.tbtn:hover{background:var(--card2);border-color:var(--gold);color:var(--gold2)}
+.tbtn.tp{background:var(--gold);border-color:var(--gold);color:#1a1208}
+.tbtn.tp:hover{background:var(--gold2)}
+.sinfo{font-size:.72rem;color:var(--muted)}
+.plens{display:flex;gap:6px;flex-wrap:wrap}
+.plen{padding:3px 10px;border-radius:5px;font-size:.75rem;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted2);transition:all var(--t);font-family:var(--fb)}
+.plen.active{border-color:var(--gold);color:var(--gold2);background:rgba(201,147,58,.1)}
+
+/* CHAT */
+.cha{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:0}
+.cm{padding:.55rem .8rem;border-radius:var(--rsm);font-size:.84rem;line-height:1.45}
+.cm.th{background:var(--card2)}
+.cm.me{background:rgba(201,147,58,.12);border:1px solid rgba(201,147,58,.18)}
+.cma{font-size:.7rem;color:var(--muted2);margin-bottom:2px}
+.cib{display:flex;gap:6px;padding:.7rem 1rem;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg2)}
+.ci{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:var(--rsm);padding:.5rem .75rem;color:var(--cream);font-family:var(--fb);font-size:.84rem;outline:none;transition:border-color var(--t)}
+.ci:focus{border-color:var(--gold)}
+
+/* MEMBERS */
+.mr{display:flex;align-items:center;gap:8px;padding:.5rem 0;border-bottom:1px solid var(--border)}
+.mr:last-child{border-bottom:none}
+.mri{flex:1;min-width:0}
+.mrn{font-size:.84rem;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrs{font-size:.7rem;color:var(--muted2)}
+.cb{font-size:.7rem;color:var(--gold);padding:2px 8px;border:1px solid rgba(201,147,58,.3);border-radius:20px;cursor:pointer;transition:all var(--t);background:transparent;flex-shrink:0}
+.cb:hover{background:rgba(201,147,58,.1)}
+
+/* SETTINGS */
+.slbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.to{padding:.55rem;border:1px solid var(--border);border-radius:var(--rsm);text-align:center;font-size:.78rem;color:var(--muted2);cursor:pointer;transition:all var(--t)}
+.to .ti{font-size:18px;display:block;margin-bottom:3px}
+.to:hover,.to.active{border-color:var(--gold);color:var(--gold2);background:rgba(201,147,58,.07)}
+.sr2{display:flex;align-items:center;justify-content:space-between;padding:.4rem 0}
+.sl2{font-size:.84rem;color:var(--cream)}
+
+/* WEATHER */
+.wc{background:var(--card2);border:1px solid var(--border);border-radius:var(--rsm);padding:.75rem;text-align:center}
+.wi{font-size:2.2rem}
+.wt{font-family:var(--fh);font-size:1.6rem;color:var(--cream)}
+.wd{font-size:.75rem;color:var(--muted2)}
+.wx{font-size:.7rem;color:var(--muted);margin-top:.25rem}
+
+/* ROOM TIME BAR */
+.rtbar{background:var(--card2);border:1px solid var(--border);border-radius:var(--rsm);padding:.75rem}
+.rtbr2{display:flex;align-items:center;justify-content:space-between;font-size:.82rem;margin-bottom:6px}
+.rtt{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.rtf{height:100%;background:var(--gold);border-radius:2px;transition:width 60s linear}
+
+/* LEADERBOARD */
+.lbr{display:flex;align-items:center;gap:10px;padding:.45rem 0;border-bottom:1px solid var(--border);font-size:.84rem}
+.lbr:last-child{border-bottom:none}
+.lbrk{width:22px;text-align:center;font-size:.75rem;font-weight:600}
+.lbrk.g{color:var(--gold2)} .lbrk.s{color:var(--muted2)} .lbrk.b{color:#a06040}
+.lbn{flex:1}
+.lbt{color:var(--gold);font-weight:500;font-size:.82rem}
+
+/* DM */
+.dme{background:var(--card2);border:1px solid var(--border);border-radius:var(--rsm);padding:.6rem .8rem;cursor:pointer;transition:all var(--t);display:flex;align-items:center;gap:8px}
+.dme:hover{border-color:var(--bord2)}
+.dme.active{border-color:var(--gold)}
+.dmb{width:8px;height:8px;border-radius:50%;background:var(--green2);flex-shrink:0}
+
+/* SESSION END */
+.es{display:flex;justify-content:center;gap:2rem;margin:1rem 0 1.5rem}
+.esn{font-family:var(--fh);font-size:2rem;color:var(--gold2);display:block}
+.esl{font-size:.72rem;color:var(--muted)}
+
+/* LOADING */
+.ld{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted2);font-size:.85rem;padding:1.25rem}
+.spin{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* CREATE ROOM */
+.cr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* AVATAR */
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;flex-shrink:0;user-select:none}
+.av-sm{width:28px;height:28px;font-size:.7rem}
+.av-md{width:38px;height:38px;font-size:.9rem}
+.av-lg{width:52px;height:52px;font-size:1.3rem}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--bord2);border-radius:2px}
+
+/* PERMISSION PROMPT */
+#cam-prompt{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9998;
+  display:none;align-items:center;justify-content:center;text-align:center;
+}
+#cam-prompt.show{display:flex}
+.cpp{background:var(--card);border:1px solid var(--bord2);border-radius:var(--r);padding:2rem;max-width:380px}
+.cpp-icon{font-size:3rem;margin-bottom:1rem}
+.cpp-title{font-family:var(--fh);font-size:1.4rem;margin-bottom:.75rem}
+.cpp-body{color:var(--muted2);font-size:.88rem;line-height:1.6;margin-bottom:1.5rem}
+.cpp-btns{display:flex;gap:10px;justify-content:center}
+
+/* connection status pill */
+#conn-pill{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:999;font-size:.75rem;padding:4px 14px;border-radius:20px;background:rgba(140,60,60,.9);color:var(--cream);display:none;pointer-events:none}
+#conn-pill.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- connection lost pill -->
+<div id="conn-pill">⚠ Reconnecting…</div>
+<!-- camera permission prompt -->
+<div id="cam-prompt">
+  <div class="cpp">
+    <div class="cpp-icon">📷</div>
+    <div class="cpp-title">Camera Access</div>
+    <div class="cpp-body">Coffee & Concepts requires your camera to join a room. This is what creates the library accountability effect — everyone can see you're studying.</div>
+    <div class="cpp-btns">
+      <button class="btn btn-p" id="cam-allow-btn">Allow Camera & Mic</button>
+      <button class="btn btn-g" id="cam-skip-btn">Join without camera</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ LANDING ═══════ -->
+<div id="sl" class="screen active">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem;text-align:center">
+    <div class="ll">☕</div>
+    <h1 class="lh">Coffee &amp; <em>Concepts</em></h1>
+    <p class="ls">A virtual study café where accountability meets community. Cameras on, focus locked, goals met — together.</p>
+    <div class="lbs">
+      <button class="btn btn-p" onclick="App.goAuth()">Get Started</button>
+      <button class="btn btn-g" onclick="App.goGuest()">Browse as Guest</button>
+    </div>
+    <div class="lsts">
+      <div><span class="lsn" id="stat-live">—</span><span class="lsl">studying now</span></div>
+      <div><span class="lsn" id="stat-rooms">—</span><span class="lsl">active rooms</span></div>
+      <div><span class="lsn">4.2k</span><span class="lsl">hrs this week</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ AUTH ═══════ -->
+<div id="sa" class="screen">
+  <div class="ab">
+    <div class="al">☕ Coffee &amp; Concepts</div>
+    <div class="ats">
+      <div class="at active" onclick="Auth.tab('login',this)">Sign In</div>
+      <div class="at" onclick="Auth.tab('reg',this)">Create Account</div>
+    </div>
+    <div id="a-login">
+      <div class="fg"><label>Email</label><input type="email" id="l-em" placeholder="you@example.com" onkeydown="if(event.key==='Enter')Auth.login()"></div>
+      <div class="fg"><label>Password</label><input type="password" id="l-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')Auth.login()"></div>
+      <div class="ferr" id="l-err"></div>
+      <button class="btn btn-p" style="width:100%" id="l-btn" onclick="Auth.login()">Sign In</button>
+    </div>
+    <div id="a-reg" style="display:none">
+      <div class="fg"><label>Username</label><input type="text" id="r-un" placeholder="StudyBuddy"></div>
+      <div class="fg"><label>Email</label><input type="email" id="r-em" placeholder="you@example.com"></div>
+      <div class="fg"><label>Password</label><input type="password" id="r-pw" placeholder="Min 6 characters"></div>
+      <div class="fg">
+        <label>Gender</label>
+        <select id="r-gn">
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+        </select>
+      </div>
+      <div class="ferr" id="r-err"></div>
+      <button class="btn btn-p" style="width:100%" id="r-btn" onclick="Auth.register()">Create Account</button>
+    </div>
+    <div class="ag"><a onclick="App.goGuest()">Continue as guest →</a></div>
+  </div>
+</div>
+
+<!-- ═══════ LOBBY ═══════ -->
+<div id="sb" class="screen">
+  <div class="lh2">
+    <div class="logo">☕ Coffee &amp; Concepts</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-g btn-sm" id="admin-btn" onclick="Admin.open()" style="display:none">⚙️ Admin</button>
+      <button class="btn btn-g btn-sm" onclick="Dash.open()">📊 Dashboard</button>
+      <button class="btn btn-g btn-sm" id="auth-btn" onclick="App.goAuth()">Sign In</button>
+      <div class="av av-sm" id="uav" style="display:none;background:rgba(201,147,58,.2);color:var(--gold2);cursor:pointer" onclick="Dash.open()"></div>
+    </div>
+  </div>
+  <div class="lbody">
+    <div class="stit">Live Study Rooms
+      <button class="btn btn-g btn-sm" id="create-btn" onclick="Lobby.showCreate()" style="display:none;margin-left:auto;font-size:.78rem">+ Admin: Create Room</button>
+    </div>
+    <div id="rg" class="rg"><div class="ld"><div class="spin"></div> Loading rooms…</div></div>
+    <div id="create-section" style="display:none;margin-bottom:2rem">
+      <div class="card">
+        <div style="font-family:var(--fh);font-size:1.1rem;margin-bottom:1rem;color:var(--cream)">Admin — Create Room</div>
+        <p style="font-size:.75rem;color:var(--muted2);margin-bottom:10px">Set <code style="font-size:.7rem">ADMIN_EMAILS</code> on the server (comma-separated emails) for admin access. Delete empty rooms from the lobby cards (🗑).</p>
+        <div class="cr-grid">
+          <div class="fg" style="margin-bottom:0"><label>Room Name</label><input type="text" id="cr-n" placeholder="My Study Space"></div>
+          <div class="fg" style="margin-bottom:0"><label>Subject</label><input type="text" id="cr-s" placeholder="Maths, Coding…"></div>
+        </div>
+        <div class="cr-grid" style="margin-top:10px">
+          <div class="fg" style="margin-bottom:0"><label>Type</label><select id="cr-t"><option value="neutral">All Welcome</option><option value="female">Women Only</option><option value="male">Men Only</option></select></div>
+          <div class="fg" style="margin-bottom:0"><label>Session Length</label><select id="cr-m"><option value="25">25 min (Pomodoro)</option><option value="50">50 min</option><option value="90">90 min (Deep Work)</option></select></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-p" onclick="Lobby.create()">Create Room</button>
+          <button class="btn btn-g" onclick="document.getElementById('create-section').style.display='none';document.getElementById('create-btn').style.display=S.user&&S.user.isAdmin?'':'none'">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div class="stit">Leaderboard</div>
+    <div class="card" style="max-width:480px" id="lb-c"><div class="ld"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- ═══════ ROOM ═══════ -->
+<div id="sr" class="screen">
+  <div class="rtb">
+    <div class="rtbl">
+      <button class="btn btn-g btn-sm" onclick="Room.leave()">← Leave</button>
+      <span class="rtbn" id="rtbn"></span>
+      <span id="rtbb" class="badge bn"></span>
+      <span id="rtbc" style="font-size:.75rem;color:var(--muted)"></span>
+    </div>
+    <div class="rtbr">
+      <button class="btn btn-g btn-sm btn-ico" id="mic-b" onclick="Room.toggleMic()" title="Mute/Unmute">🎙</button>
+      <button class="btn btn-g btn-sm btn-ico" id="cam-b" onclick="Room.toggleCam()" title="Camera on/off">📷</button>
+      <button class="btn btn-g btn-sm" id="brk-b" onclick="Room.startBreak()">☕ Break</button>
+    </div>
+  </div>
+  <div class="rl">
+    <div class="va"><div class="vg" id="vg"></div></div>
+    <div class="sp">
+      <div class="stabs">
+        <div class="stab active" onclick="Room.tab('timer',this)">⏱</div>
+        <div class="stab" onclick="Room.tab('members',this)">👥</div>
+        <div class="stab" onclick="Room.tab('desk',this)">📝</div>
+        <div class="stab" onclick="Room.tab('chat',this)">💬<span id="cdot" style="color:var(--green2);font-size:.48rem;vertical-align:super;display:none">●</span></div>
+        <div class="stab" onclick="Room.tab('dm',this)">📨<span id="ddot" style="color:var(--green2);font-size:.48rem;vertical-align:super;display:none">●</span></div>
+        <div class="stab" onclick="Room.tab('settings',this)">⚙</div>
+      </div>
+
+      <!-- TIMER -->
+      <div id="pane-timer" class="spane active">
+        <div class="tw">
+          <div class="tmode" id="tmode">Focus Session</div>
+          <div class="tclock" id="tclock">25:00</div>
+          <div class="tprog"><div class="tpf fo" id="tpf" style="width:100%"></div></div>
+          <div class="tbtns">
+            <button class="tbtn tp" id="tstart" onclick="Room.timerCtrl()">Start</button>
+            <button class="tbtn" onclick="Room.timerReset()">Reset</button>
+          </div>
+          <div class="sinfo" id="sinfo">Session 1 · <span style="color:var(--gold);cursor:pointer" onclick="Room.voteExtend()">Vote extend</span></div>
+          <div style="margin-top:.9rem">
+            <div class="slbl" style="margin-bottom:5px">Pomodoro length</div>
+            <div class="plens">
+              <button class="plen active" onclick="Room.setPom(25,this)">25m</button>
+              <button class="plen" onclick="Room.setPom(50,this)">50m</button>
+              <button class="plen" onclick="Room.setPom(90,this)">90m</button>
+            </div>
+          </div>
+        </div>
+        <div class="rtbar" id="rtbar-wrap">
+          <div class="rtbr2"><span style="color:var(--muted2);font-size:.78rem" id="rexp-lbl">Room session</span><span id="rexp" style="font-size:.78rem;color:var(--cream)">—</span></div>
+          <div class="rtt" id="rtt-wrap"><div class="rtf" id="rtff" style="width:100%"></div></div>
+        </div>
+        <div class="wc" id="wcrd"><div class="ld"><div class="spin"></div> Loading weather…</div></div>
+      </div>
+
+      <!-- MEMBERS -->
+      <div id="pane-members" class="spane">
+        <div id="mlist"></div>
+      </div>
+
+      <!-- DESK: note + todos -->
+      <div id="pane-desk" class="spane" style="gap:12px">
+        <div>
+          <div class="slbl">Study note</div>
+          <textarea id="desk-note" rows="5" placeholder="Lecture points, goals, scratchpad…" style="resize:vertical;min-height:88px"></textarea>
+          <button class="btn btn-p btn-sm" style="margin-top:8px" onclick="Desk.saveNote()">Save note</button>
+        </div>
+        <div>
+          <div class="slbl">Quick to-dos</div>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <input type="text" id="desk-todo-inp" class="ci" style="flex:1" placeholder="Add a task…" onkeydown="if(event.key==='Enter')Desk.addTodo()">
+            <button class="tbtn tp" onclick="Desk.addTodo()" style="padding:6px 12px">+</button>
+          </div>
+          <div id="desk-todos"></div>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div id="pane-chat" class="spane" style="padding-bottom:0;gap:0">
+        <div class="cha" id="cha"></div>
+      </div>
+
+      <!-- DM -->
+      <div id="pane-dm" class="spane">
+        <div id="dm-list-view">
+          <div style="font-size:.8rem;color:var(--muted2);margin-bottom:.75rem">Accepted buddy connections</div>
+          <div id="dm-list"><div style="font-size:.8rem;color:var(--muted);text-align:center;padding:1rem">No connections yet.<br>Use Members tab to connect.</div></div>
+        </div>
+        <div id="dm-chat-view" style="display:none;flex-direction:column;height:100%">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:.75rem;border-bottom:1px solid var(--border);margin-bottom:.75rem;flex-shrink:0">
+            <span style="font-size:.78rem;color:var(--gold);cursor:pointer" onclick="DM.back()">← Back</span>
+            <span style="font-size:.9rem" id="dm-with"></span>
+          </div>
+          <div class="cha" id="dm-cha" style="flex:1"></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="pane-settings" class="spane">
+        <div>
+          <div class="slbl">Room Theme</div>
+          <div class="tg">
+            <div class="to active" onclick="Room.theme('',this)"><span class="ti">🌑</span>Dark</div>
+            <div class="to" onclick="Room.theme('tc',this)"><span class="ti">☕</span>Café</div>
+            <div class="to" onclick="Room.theme('tn',this)"><span class="ti">🌙</span>Night Owl</div>
+            <div class="to" onclick="Room.theme('tf',this)"><span class="ti">🌿</span>Forest</div>
+          </div>
+        </div>
+        <div>
+          <div class="slbl" style="margin-bottom:4px">Ambient Sounds</div>
+          <div class="sr2"><span class="sl2">Lo-fi beats</span><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="sr2"><span class="sl2">Rain sounds</span><div class="tog" onclick="this.classList.toggle('on')"></div></div>
+          <div class="sr2"><span class="sl2">Café chatter</span><div class="tog" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div>
+          <div class="slbl" style="margin-bottom:4px">My Camera</div>
+          <div class="sr2"><span class="sl2">Mirror video</span><div class="tog on" id="mirror-tog" onclick="this.classList.toggle('on');Room.toggleMirror()"></div></div>
+          <div class="sr2"><span class="sl2">Camera required</span><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+      </div>
+
+      <!-- chat input bar -->
+      <div id="cib-r" style="display:none"><div class="cib">
+        <input class="ci" id="ci" placeholder="Message the room…" onkeydown="if(event.key==='Enter')Room.chat()">
+        <button class="tbtn tp" onclick="Room.chat()" style="padding:6px 12px">→</button>
+      </div></div>
+      <div id="cib-dm" style="display:none"><div class="cib">
+        <input class="ci" id="dmi" placeholder="Direct message…" onkeydown="if(event.key==='Enter')DM.send()">
+        <button class="tbtn tp" onclick="DM.send()" style="padding:6px 12px">→</button>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODALS ═══════ -->
+<div class="mo" id="m-prof">
+  <div class="md">
+    <div class="mt" id="prof-title">Member</div>
+    <div class="mb" id="prof-sub">Send a short message (same room, no buddy request needed).</div>
+    <textarea id="prof-msg" rows="3" placeholder="Your message…" style="resize:vertical;min-height:72px"></textarea>
+    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+      <button class="btn btn-g" onclick="document.getElementById('m-prof').classList.remove('open')">Cancel</button>
+      <button class="btn btn-p" onclick="Room.sendProfileMsg()">Send</button>
+    </div>
+  </div>
+</div>
+<!-- Session End -->
+<div class="mo" id="m-end">
+  <div class="md" style="text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:.75rem">🎉</div>
+    <div class="mt">Session Complete!</div>
+    <div class="mb">Great work! You finished another focus block. Streak continues.</div>
+    <div class="es">
+      <div><span class="esn" id="e-mins">25</span><span class="esl">minutes</span></div>
+      <div><span class="esn" id="e-cnt">1</span><span class="esl">sessions</span></div>
+      <div><span class="esn">🔥</span><span class="esl">streak</span></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-p" onclick="Room.next()">Next Session</button>
+      <button class="btn btn-g" onclick="Room.leave()">Leave Room</button>
+    </div>
+  </div>
+</div>
+
+<!-- Break -->
+<div class="mo" id="m-brk">
+  <div class="md" style="text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:.75rem">☕</div>
+    <div class="mt">Coffee Break!</div>
+    <div class="mb">Step away and recharge. Your room sees you as "On Break".</div>
+    <div style="font-family:var(--fh);font-size:3.5rem;color:var(--gold2);margin:.5rem 0 1rem" id="bclk">05:00</div>
+    <div class="tprog" style="margin-bottom:1.5rem"><div class="tpf bk" id="bpf" style="width:100%"></div></div>
+    <button class="btn btn-g" onclick="Room.endBreak()">Back to Focus</button>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="mo" id="m-dash">
+  <div class="md" style="max-width:480px">
+    <div class="mt">📊 Your Dashboard</div>
+    <div style="display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--border);border-radius:var(--rsm);padding:.7rem;margin-bottom:1rem">
+      <span style="font-size:1.8rem">🔥</span>
+      <div><div style="font-family:var(--fh);font-size:1.6rem;color:var(--gold2)" id="d-str">—</div><div style="font-size:.75rem;color:var(--muted2)">day streak</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem">
+      <div class="sc"><div class="sc-n" id="d-tot">—</div><div class="sc-l">Total studied</div></div>
+      <div class="sc"><div class="sc-n" id="d-tod">—</div><div class="sc-l">Today</div></div>
+      <div class="sc"><div class="sc-n" id="d-ses">—</div><div class="sc-l">Sessions</div></div>
+      <div class="sc"><div class="sc-n" id="d-scr">—</div><div class="sc-l">Focus score</div></div>
+    </div>
+    <div class="card" style="margin-bottom:1rem">
+      <div class="slbl" style="margin-bottom:8px">This Week</div>
+      <div style="display:flex;align-items:flex-end;gap:5px;height:60px" id="wbars"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:3px">
+        <span style="flex:1;text-align:center;font-size:.62rem;color:var(--muted)">Mon</span>
+        <span style="flex:1;text-align:center;font-size:.62rem;color:var(--muted)">Tue</span>
+        <span style="flex:1;text-align:center;font-size:.62rem;color:var(--muted)">Wed</span>
+        <span style="flex:1;text-align:center;font-size:.62rem;color:var(--muted)">Thu</span>
+        <span style="flex:1;text-align:center;font-size:.62rem;color:var(--muted)">Fri</span>
+        <span style="flex:1;text-align:center;font-size:.62rem;color:var(--muted)">Sat</span>
+        <span style="flex:1;text-align:center;font-size:.62rem;color:var(--muted)">Sun</span>
+      </div>
+    </div>
+    <div class="card" id="d-lb" style="margin-bottom:1rem"><div class="ld"><div class="spin"></div></div></div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-g" onclick="Dash.close()">Close</button>
+      <button class="btn btn-no btn-sm" id="lo-btn" onclick="Auth.logout()" style="display:none">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Dashboard -->
+<div class="mo" id="m-admin">
+  <div class="md" style="max-width:700px;width:95%">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div class="mt">⚙️ Admin Dashboard</div>
+      <button class="btn btn-g btn-sm" onclick="Admin.close()">×</button>
+    </div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:1.5rem">
+      <div class="sc"><div class="sc-n" id="admin-total-users">—</div><div class="sc-l">Total Users</div></div>
+      <div class="sc"><div class="sc-n" id="admin-banned">—</div><div class="sc-l">Banned</div></div>
+      <div class="sc"><div class="sc-n" id="admin-admins">—</div><div class="sc-l">Admins</div></div>
+      <div class="sc"><div class="sc-n" id="admin-rooms">—</div><div class="sc-l">Rooms</div></div>
+    </div>
+
+    <div style="margin-bottom:1.5rem">
+      <div class="slbl">User Management</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <input type="text" id="admin-search-users" class="ci" style="flex:1" placeholder="Search users by name or email...">
+        <button class="tbtn tp" onclick="Admin.searchUsers()">Search</button>
+      </div>
+      <div id="admin-users-list" style="max-height:250px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rsm);padding:10px;background:var(--bg3)">
+        <div class="ld"><div class="spin"></div> Loading users...</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.5rem">
+      <div class="slbl">Room Management</div>
+      <div id="admin-rooms-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rsm);padding:10px;background:var(--bg3)">
+        <div class="ld"><div class="spin"></div> Loading rooms...</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.5rem">
+      <div class="slbl">Reports</div>
+      <div id="admin-reports-list" style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rsm);padding:10px;background:var(--bg3)">
+        <div style="color:var(--muted);text-align:center;padding:1rem">Open admin to load reports.</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-g" onclick="Admin.close()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Report -->
+<div class="mo" id="m-rep">
+  <div class="md">
+    <div class="mt" id="rep-title">Report</div>
+    <div class="mb">Describe what happened. Admins can review and take action.</div>
+    <textarea id="rep-msg" rows="4" placeholder="What did the person do? Include context." style="resize:vertical;min-height:90px"></textarea>
+    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+      <button class="btn btn-g" onclick="document.getElementById('m-rep').classList.remove('open')">Cancel</button>
+      <button class="btn btn-p" onclick="Report.send()">Submit report</button>
+    </div>
+  </div>
+</div>
+
+<div id="nstack"></div>
+<script>
+'use strict';
+// ══════════════════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════════════════
+const API_URL    = window.location.origin;
+const SOCKET_URL = window.location.origin;
+
+// ══════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════
+const S = {
+  token:       localStorage.getItem('cc_tok') || null,
+  user:        null,
+  socket:      null,
+  roomId:      null,
+  roomData:    null,
+  micOn:       true,
+  camOn:       true,
+  onBreak:     false,
+  pomMins:     25,
+  sessions:    0,
+  breakTimer:  null,
+  breakSecs:   300,
+  mirror:      true,
+  dms:         {},        // dmId → { withUsername, withSocketId, messages[] }
+  activeDmId:  null,
+  localStream: null,      // MediaStream from getUserMedia
+  peers:       {},        // socketId → RTCPeerConnection
+  profileToSocketId: null,
+  profileToName: '',
+};
+
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+];
+
+// ══════════════════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════════════════
+async function api(method, path, body) {
+  const h = { 'Content-Type':'application/json' };
+  if (S.token) h['Authorization'] = 'Bearer '+S.token;
+  const r = await fetch(API_URL+path, { method, headers:h, body:body?JSON.stringify(body):undefined });
+  if (!r.ok) { const e=await r.json().catch(()=>({error:'Network error'})); throw new Error(e.error||'Failed'); }
+  return r.json();
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+const AVCOLORS = [
+  ['rgba(201,147,58,.25)','#e8b56a'],['rgba(200,110,138,.25)','#e08aab'],
+  ['rgba(78,120,181,.25)','#6fa0e0'],['rgba(74,140,92,.25)','#6dbe88'],
+  ['rgba(150,80,200,.25)','#c48aee'],['rgba(180,100,60,.25)','#e0905a'],
+  ['rgba(60,140,160,.25)','#5ec8e0'],['rgba(140,60,120,.25)','#e080c0'],
+];
+function ac(i) { return AVCOLORS[i%AVCOLORS.length]; }
+
+function fmtTime(ms) {
+  const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
+  return h>0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function pad2(n) { return String(n).padStart(2,'0'); }
+
+// ══════════════════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ══════════════════════════════════════════════════════════════
+const Notif = {
+  show(title, body, ms=4000) {
+    const s=document.getElementById('nstack');
+    const c=document.createElement('div'); c.className='nc';
+    c.innerHTML=`<div class="nt">${title}</div><div class="nb">${body}</div>`;
+    s.appendChild(c);
+    if (ms>0) setTimeout(()=>c.remove(), ms);
+    return c;
+  },
+  buddy(reqId, fromUser, fromAvatar) {
+    const s=document.getElementById('nstack');
+    const c=document.createElement('div'); c.className='nc';
+    c.innerHTML=`<div class="nt">🤝 Buddy Request</div>
+      <div class="nb">${fromUser} wants to study with you</div>
+      <div class="na">
+        <button class="btn-ok" onclick="Notif.acceptB('${reqId}',this)">Accept</button>
+        <button class="btn-no" onclick="Notif.declineB('${reqId}',this)">Decline</button>
+      </div>`;
+    s.appendChild(c); return c;
+  },
+  acceptB(reqId,btn) { S.socket.emit('buddy:accept',{requestId:reqId}); btn.closest('.nc').remove(); },
+  declineB(reqId,btn){ S.socket.emit('buddy:decline',{requestId:reqId}); btn.closest('.nc').remove(); },
+};
+
+// ══════════════════════════════════════════════════════════════
+//  WEBRTC
+// ══════════════════════════════════════════════════════════════
+const RTC = {
+  async getMedia(video=true) {
+    try {
+      const constraints = { audio:true, video:video?{width:{ideal:640},height:{ideal:480},facingMode:'user'}:false };
+      S.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      return true;
+    } catch(e) {
+      console.warn('Media access denied:', e.message);
+      S.localStream = null; S.camOn=false; S.micOn=false;
+      return false;
+    }
+  },
+
+  updateMyTile() {
+    const myTile = document.querySelector('.vt.me');
+    if (!myTile) return;
+    let vid = myTile.querySelector('video.vtv');
+    if (S.localStream && S.camOn) {
+      if (!vid) { vid=document.createElement('video'); vid.className='vtv'; vid.autoplay=true; vid.muted=true; vid.playsInline=true; myTile.insertBefore(vid,myTile.firstChild); }
+      vid.srcObject = S.localStream;
+      vid.style.transform = S.mirror ? 'scaleX(-1)' : 'scaleX(1)';
+      myTile.querySelector('.vta').style.display='none';
+    } else {
+      if (vid) vid.remove();
+      myTile.querySelector('.vta').style.display='';
+    }
+  },
+
+  async callPeer(socketId) {
+    if (S.peers[socketId]) return;
+    const pc = this.createPC(socketId);
+    if (S.localStream) S.localStream.getTracks().forEach(t=>pc.addTrack(t, S.localStream));
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    S.socket.emit('webrtc:offer', { toSocketId:socketId, offer });
+  },
+
+  async onOffer(fromSocketId, offer) {
+    const pc = this.createPC(fromSocketId);
+    if (S.localStream) S.localStream.getTracks().forEach(t=>pc.addTrack(t, S.localStream));
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    S.socket.emit('webrtc:answer', { toSocketId:fromSocketId, answer });
+  },
+
+  async onAnswer(fromSocketId, answer) {
+    const pc = S.peers[fromSocketId];
+    if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
+  },
+
+  async onIce(fromSocketId, candidate) {
+    const pc = S.peers[fromSocketId];
+    if (pc && candidate) { try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch {} }
+  },
+
+  createPC(socketId) {
+    const pc = new RTCPeerConnection({ iceServers:ICE_SERVERS });
+    S.peers[socketId] = pc;
+
+    pc.onicecandidate = (e) => {
+      if (e.candidate) S.socket.emit('webrtc:ice', { toSocketId:socketId, candidate:e.candidate });
+    };
+
+    pc.ontrack = (e) => {
+      const tile = document.querySelector(`.vt[data-sock="${socketId}"]`);
+      if (!tile) return;
+      let vid = tile.querySelector('video.vtv');
+      if (!vid) {
+        vid = document.createElement('video'); vid.className='vtv';
+        vid.autoplay=true; vid.playsInline=true; vid.muted=false;
+        tile.insertBefore(vid, tile.firstChild);
+      }
+      vid.srcObject = e.streams[0];
+      tile.querySelector('.vta').style.display = 'none';
+    };
+
+    pc.onconnectionstatechange = () => {
+      if (['failed','closed','disconnected'].includes(pc.connectionState)) this.removePeer(socketId);
+    };
+
+    return pc;
+  },
+
+  removePeer(socketId) {
+    const pc = S.peers[socketId];
+    if (pc) { pc.close(); delete S.peers[socketId]; }
+    // Remove remote video, show avatar fallback
+    const tile = document.querySelector(`.vt[data-sock="${socketId}"]`);
+    if (tile) { const vid=tile.querySelector('video.vtv'); if(vid)vid.remove(); const vta=tile.querySelector('.vta'); if(vta)vta.style.display=''; }
+  },
+
+  closeAll() {
+    Object.keys(S.peers).forEach(id=>this.removePeer(id));
+    if (S.localStream) { S.localStream.getTracks().forEach(t=>t.stop()); S.localStream=null; }
+  },
+};
+
+// ══════════════════════════════════════════════════════════════
+//  SOCKET SETUP
+// ══════════════════════════════════════════════════════════════
+function connectSocket() {
+  if (S.socket?.connected) return;
+  S.socket = io(SOCKET_URL, { auth:{ token:S.token||'' }, reconnectionDelay:1000, reconnectionDelayMax:5000 });
+
+  S.socket.on('connect', () => {
+    document.getElementById('conn-pill').classList.remove('show');
+    console.log('[socket] connected');
+  });
+  S.socket.on('disconnect', () => {
+    document.getElementById('conn-pill').classList.add('show');
+  });
+  S.socket.on('reconnect', () => {
+    document.getElementById('conn-pill').classList.remove('show');
+    if (S.roomId) S.socket.emit('room:join', { roomId:S.roomId });
+  });
+
+  // ── Admin moderation ──
+  function handleKicked(reason) {
+    try { RTC.closeAll(); } catch {}
+    try { clearInterval(S.breakTimer); } catch {}
+    S.roomId=null; S.roomData=null; S.onBreak=false;
+    try { document.getElementById('m-end').classList.remove('open'); } catch {}
+    try { document.getElementById('m-brk').classList.remove('open'); } catch {}
+    Notif.show('🚫 Removed by admin', reason || 'You were removed from active sessions.', 0);
+    // Keep account signed in, but force return to lobby
+    show('sb');
+    try { Lobby.load(); } catch {}
+  }
+
+  // Broadcast form (works across multi-instance deployments)
+  S.socket.on('admin:kick-user', ({ userId, reason }) => {
+    if (!S.user?.id) return;
+    if (S.user.id !== userId) return;
+    handleKicked(reason);
+  });
+
+  // Direct form (if server targets this socket)
+  S.socket.on('admin:kicked-out', ({ reason }) => {
+    handleKicked(reason);
+  });
+
+  // Restriction updates (do not force leave; just inform)
+  S.socket.on('admin:restricted', ({ userId, until }) => {
+    if (!S.user?.id) return;
+    if (S.user.id !== userId) return;
+    const when = until ? new Date(until).toLocaleString() : 'later';
+    Notif.show('🔇 Restricted', `Messaging is restricted until ${when}.`, 0);
+    S.user.chatRestrictedUntil = until || null;
+  });
+
+  // ── Room events ──
+  S.socket.on('room:joined', async (room) => {
+    S.roomData = room;
+    Room.setTopbar(room);
+    Room.renderGrid(room);
+    Room.renderMembers(room);
+    Room.syncTimer(room.timer);
+    Room.updateExpiry(room);
+    // Load chat history
+    const ca=document.getElementById('cha'); ca.innerHTML='';
+    room.messages.forEach(m=>Room.appendChat(m,false));
+    // Call all existing peers
+    for (const m of room.members) {
+      if (m.socketId !== S.socket.id) await RTC.callPeer(m.socketId);
+    }
+  });
+
+  S.socket.on('room:update', (room) => {
+    S.roomData=room; Room.renderGrid(room); Room.renderMembers(room); Room.updateExpiry(room);
+    document.getElementById('rtbc').textContent = `${room.memberCount}/${room.maxMembers}`;
+  });
+
+  S.socket.on('room:member-joined', async ({ socketId, username }) => {
+    Notif.show('📚 Joined', `${username} joined the room`, 3000);
+    if (socketId !== S.socket.id) await RTC.callPeer(socketId);
+  });
+
+  S.socket.on('room:member-left', ({ socketId, username }) => {
+    Notif.show('👋 Left', `${username} left the room`, 3000);
+    RTC.removePeer(socketId);
+  });
+
+  S.socket.on('room:expired', () => {
+    Notif.show('⏰ Room Expired', 'This room has been refreshed. Returning to lobby…', 0);
+    setTimeout(()=>Room.leave(), 3000);
+  });
+
+  S.socket.on('room:extend-vote', ({ from, votes, needed }) => {
+    Notif.show('🗳 Extend vote', `${from} voted to extend (${votes}/${needed} needed)`, 5000);
+  });
+
+  S.socket.on('room:extended', ({ by }) => {
+    const msg = by === '∞' || by === '\u221e' ? 'Open-ended session confirmed.' : `Session extended by ${by} minutes`;
+    Notif.show('✅ Room Extended!', msg, 5000);
+  });
+
+  // ── Timer events ──
+  S.socket.on('timer:tick', ({ secondsLeft, totalSeconds, mode, sessionCount }) => {
+    if (S.roomData && S.roomData.timer) {
+      Object.assign(S.roomData.timer, { secondsLeft, totalSeconds, mode, sessionCount });
+      Room.syncTimer(S.roomData.timer);
+    }
+  });
+
+  S.socket.on('timer:started', ({ by }) => {
+    document.getElementById('tstart').textContent='Pause';
+    if (by!==S.user?.username) Notif.show('▶ Timer', `${by} started the timer`, 2500);
+  });
+
+  S.socket.on('timer:paused', ({ by }) => {
+    document.getElementById('tstart').textContent='Resume';
+    if (by!==S.user?.username) Notif.show('⏸ Timer', `${by} paused the timer`, 2500);
+  });
+
+  S.socket.on('timer:reset', ({ by }) => {
+    document.getElementById('tstart').textContent='Start';
+    if (by!==S.user?.username) Notif.show('↺ Timer', `${by} reset the timer`, 2500);
+  });
+
+  S.socket.on('timer:session-complete', ({ sessionCount }) => {
+    S.sessions=sessionCount;
+    document.getElementById('e-mins').textContent=S.pomMins;
+    document.getElementById('e-cnt').textContent=sessionCount;
+    document.getElementById('m-end').classList.add('open');
+    if (S.user) S.socket.emit('session:complete', { minutes:S.pomMins });
+  });
+
+  S.socket.on('timer:break-complete', () => {
+    Notif.show('🎯 Break over!','Time to focus again.',4000);
+  });
+
+  // ── Member events ──
+  S.socket.on('member:break-start', ({ socketId }) => {
+    const t=document.querySelector(`.vt[data-sock="${socketId}"]`);
+    if (t) { t.classList.add('ob'); const p=t.querySelector('.obp'); if(p)p.style.display=''; }
+  });
+
+  S.socket.on('member:break-end', ({ socketId }) => {
+    const t=document.querySelector(`.vt[data-sock="${socketId}"]`);
+    if (t) { t.classList.remove('ob'); const p=t.querySelector('.obp'); if(p)p.style.display='none'; }
+  });
+
+  S.socket.on('member:media-update', ({ socketId, camOn, micOn }) => {
+    const t=document.querySelector(`.vt[data-sock="${socketId}"]`);
+    if (!t) return;
+    const nc=t.querySelector('.nocam'); if(nc)nc.style.display=camOn?'none':'';
+    const mi=t.querySelector('.mic-i'); if(mi)mi.textContent=micOn?'':'🔇';
+    if (!camOn) { const v=t.querySelector('video'); if(v)v.style.display='none'; t.querySelector('.vta').style.display=''; }
+    else        { const v=t.querySelector('video'); if(v)v.style.display=''; }
+  });
+
+  // ── Chat ──
+  S.socket.on('chat:message', (msg) => {
+    Room.appendChat(msg, true);
+  });
+
+  // ── Buddy & DM ──
+  S.socket.on('buddy:request-received', ({ requestId, fromSocketId, fromUsername, fromAvatar }) => {
+    Notif.buddy(requestId, fromUsername, fromAvatar);
+  });
+
+  S.socket.on('buddy:request-sent', ({ toUsername }) => {
+    Notif.show('📨 Request sent', `Waiting for ${toUsername} to respond`, 4000);
+  });
+
+  S.socket.on('buddy:accepted', ({ dmId, withSocketId, withUsername }) => {
+    S.dms[dmId]={ withUsername, withSocketId, messages:[] };
+    DM.renderList();
+    document.getElementById('ddot').style.display='';
+    Notif.show('🤝 Connected!', `${withUsername} accepted your request`, 5000);
+  });
+
+  S.socket.on('buddy:declined', ({ byUsername }) => {
+    Notif.show('❌ Declined', `${byUsername} declined your request`, 4000);
+  });
+
+  S.socket.on('dm:message', ({ dmId, msg }) => {
+    if (!S.dms[dmId]) S.dms[dmId]={ withUsername:msg.fromUsername, messages:[] };
+    S.dms[dmId].messages.push(msg);
+    DM.renderList();
+    if (S.activeDmId===dmId) DM.renderChat(dmId);
+    else Notif.show('💬 '+msg.fromUsername, msg.text.slice(0,40), 5000);
+    document.getElementById('ddot').style.display='';
+  });
+
+  // ── WebRTC relay ──
+  S.socket.on('webrtc:offer',     async({ fromSocketId, offer })     => await RTC.onOffer(fromSocketId, offer));
+  S.socket.on('webrtc:answer',    async({ fromSocketId, answer })    => await RTC.onAnswer(fromSocketId, answer));
+  S.socket.on('webrtc:ice',       async({ fromSocketId, candidate }) => await RTC.onIce(fromSocketId, candidate));
+  S.socket.on('webrtc:peer-left',     ({ fromSocketId })             => RTC.removePeer(fromSocketId));
+
+  // ── Stats ──
+  S.socket.on('stats:updated', (stats) => { if(S.user) S.user.stats=stats; });
+
+  S.socket.on('error', ({ message }) => Notif.show('⚠ Error', message, 5000));
+
+  S.socket.on('room:user-message', ({ fromUsername, text }) => {
+    Notif.show('💬 ' + fromUsername, text.slice(0, 200), 8000);
+  });
+  S.socket.on('room:user-message-sent', () => {
+    Notif.show('Sent', 'Message delivered', 2500);
+  });
+
+  S.socket.on('timer:milestone', ({ sessionCount }) => {
+    S.sessions = sessionCount;
+    Notif.show('🎯 Focus block ' + sessionCount, 'Session continues (no forced break).', 3500);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  APP
+// ══════════════════════════════════════════════════════════════
+const App = {
+  async init() {
+    if (S.token) {
+      try {
+        const { user } = await api('GET','/api/auth/me');
+        S.user=user; this.goLobby();
+      } catch { S.token=null; localStorage.removeItem('cc_tok'); this.goLanding(); }
+    } else { this.goLanding(); }
+    this.pollStats();
+  },
+
+  async pollStats() {
+    try {
+      const { rooms } = await api('GET','/api/rooms');
+      let total=0; rooms.forEach(r=>total+=r.memberCount);
+      document.getElementById('stat-live').textContent=total;
+      document.getElementById('stat-rooms').textContent=rooms.filter(r=>r.memberCount>0).length;
+    } catch {}
+    setTimeout(()=>this.pollStats(), 10000);
+  },
+
+  goLanding() { show('sl'); },
+  goAuth()    { show('sa'); },
+  goLobby()   { show('sb'); Lobby.load(); connectSocket(); },
+  async goGuest() { S.user=null; this.goLobby(); connectSocket(); },
+};
+
+// ══════════════════════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════════════════════
+const Auth = {
+  tab(t, el) {
+    document.querySelectorAll('.at').forEach(a=>a.classList.remove('active')); el.classList.add('active');
+    document.getElementById('a-login').style.display=t==='login'?'':'none';
+    document.getElementById('a-reg').style.display=t==='reg'?'':'none';
+  },
+
+  async login() {
+    const em=document.getElementById('l-em').value.trim();
+    const pw=document.getElementById('l-pw').value;
+    const err=document.getElementById('l-err'); err.classList.remove('show');
+    const btn=document.getElementById('l-btn'); btn.textContent='Signing in…'; btn.disabled=true;
+    try {
+      const { token, user } = await api('POST','/api/auth/login',{email:em,password:pw});
+      S.token=token; S.user=user; localStorage.setItem('cc_tok',token); App.goLobby();
+    } catch(e) { err.textContent=e.message; err.classList.add('show'); }
+    finally { btn.textContent='Sign In'; btn.disabled=false; }
+  },
+
+  async register() {
+    const un=document.getElementById('r-un').value.trim();
+    const em=document.getElementById('r-em').value.trim();
+    const pw=document.getElementById('r-pw').value;
+    const gn=document.getElementById('r-gn').value;
+    const err=document.getElementById('r-err'); err.classList.remove('show');
+    if (!un||!em||!pw){err.textContent='All fields required';err.classList.add('show');return;}
+    if (pw.length<6){err.textContent='Password min 6 characters';err.classList.add('show');return;}
+    if (gn!=='female'&&gn!=='male'){err.textContent='Select Female or Male';err.classList.add('show');return;}
+    const btn=document.getElementById('r-btn'); btn.textContent='Creating…'; btn.disabled=true;
+    try {
+      const {token,user}=await api('POST','/api/auth/register',{username:un,email:em,password:pw,gender:gn});
+      S.token=token; S.user=user; localStorage.setItem('cc_tok',token); App.goLobby();
+    } catch(e){err.textContent=e.message;err.classList.add('show');}
+    finally{btn.textContent='Create Account';btn.disabled=false;}
+  },
+
+  logout() {
+    S.token=null; S.user=null; localStorage.removeItem('cc_tok');
+    if(S.socket){S.socket.disconnect();S.socket=null;}
+    document.getElementById('m-dash').classList.remove('open');
+    App.goLanding();
+  },
+};
+
+// ══════════════════════════════════════════════════════════════
+//  LOBBY
+// ══════════════════════════════════════════════════════════════
+const Lobby = {
+  canSeeRoom(r) {
+    if (r.type==='neutral') return true;
+    if (!S.user) return false;
+    if (r.type==='female') return S.user.gender==='female';
+    if (r.type==='male') return S.user.gender==='male';
+    return true;
+  },
+
+  async load() {
+    const ab=document.getElementById('auth-btn');
+    const ua=document.getElementById('uav');
+    const cb=document.getElementById('create-btn');
+    const adminBtn=document.getElementById('admin-btn');
+    if (S.user) { ab.style.display='none'; ua.style.display=''; ua.textContent=S.user.avatar; cb.style.display=S.user.isAdmin?'':'none'; adminBtn.style.display=S.user.isAdmin?'':'none'; }
+    else        { ab.style.display=''; ua.style.display='none'; cb.style.display='none'; adminBtn.style.display='none'; }
+    await this.renderRooms();
+    await this.renderLb();
+  },
+
+  async renderRooms() {
+    const g=document.getElementById('rg');
+    try {
+      const {rooms}=await api('GET','/api/rooms');
+      const vis=rooms.filter(r=>this.canSeeRoom(r));
+      if (!vis.length){g.innerHTML='<div class="ld">No rooms match your access. Guests see neutral rooms only. Create an account and select your gender to access women-only or men-only rooms.</div>';return;}
+      g.innerHTML=vis.map((r,i)=>this.card(r,i)).join('');
+    } catch {
+      g.innerHTML='<div class="ld" style="flex-direction:column;gap:8px"><span>⚠ Cannot connect to server</span><span style="font-size:.78rem;color:var(--muted)">Start the backend: cd server && npm install && node index.js</span></div>';
+    }
+  },
+
+  card(r) {
+    const pct=r.timeLeftMs==null?100:Math.min(100,Math.round((r.timeLeftMs/(3*60*60*1000))*100));
+    const expLbl=r.timeLeftMs==null?'Open-ended session':fmtTime(r.timeLeftMs)+' remaining';
+    const typeLabel=r.type==='neutral'?'All':r.type==='female'?'Women':'Men';
+    const bc=r.type==='neutral'?'bn':r.type==='female'?'bf':'bm';
+    const full=r.memberCount>=r.maxMembers;
+    const del=S.user?.isAdmin && r.memberCount===0
+      ? `<button class="btn btn-no btn-sm" style="margin-left:6px;padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();Lobby.adminDel('${r.id}')">🗑</button>`
+      : '';
+    return `<div class="rc ${r.type}" onclick="Lobby.join('${r.id}')">
+      <div class="rc-h">
+        <div><div class="rn">${r.icon} ${r.name}</div><div class="rsub">${r.subject} · ${r.sessionMins}min focus · ${r.timer?.skipBreakCycle?'∞ cycles':'timer'}</div></div>
+        <span style="display:flex;align-items:center"><span class="badge ${bc}">${typeLabel}</span>${del}</span>
+      </div>
+      <div class="rm">
+        <span>${r.memberCount}/${r.maxMembers}</span>
+        ${full?'<span style="font-size:.68rem;color:var(--red2);font-weight:500">FULL</span>':''}
+        <span style="margin-left:auto;color:var(--muted2)">${r.timer.running?'🟢 Live':'⏸ Waiting'}</span>
+      </div>
+      <div class="rb"><div class="rbf" style="width:${pct}%"></div></div>
+      <div class="rbl">${expLbl}</div>
+    </div>`;
+  },
+
+  async adminDel(roomId) {
+    if (!S.user?.isAdmin) return;
+    if (!confirm('Delete this room permanently?')) return;
+    try {
+      await api('DELETE','/api/admin/rooms/'+encodeURIComponent(roomId));
+      Notif.show('Removed','Room deleted',3000);
+      await this.renderRooms();
+    } catch(e) { Notif.show('⚠', e.message, 5000); }
+  },
+
+  async renderLb() {
+    const el=document.getElementById('lb-c');
+    try {
+      const {leaderboard}=await api('GET','/api/leaderboard');
+      if (!leaderboard.length){el.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Study to appear here!</div>';return;}
+      const rk=['🥇','🥈','🥉'], rc=['g','s','b'];
+      el.innerHTML=leaderboard.slice(0,8).map((u,i)=>`
+        <div class="lbr">
+          <div class="lbrk ${rc[i]||''}">${rk[i]||i+1}</div>
+          <div class="lbn" style="${u.id===S.user?.id?'color:var(--gold2);font-weight:500':''}">
+            ${u.username}${u.id===S.user?.id?' (you)':''}
+          </div>
+          <div class="lbt">${Math.floor(u.totalMinutes/60)}h ${u.totalMinutes%60}m</div>
+        </div>`).join('');
+    } catch { el.innerHTML='<div style="color:var(--muted);font-size:.84rem;padding:1rem">Connect to backend to see leaderboard.</div>'; }
+  },
+
+  showCreate() {
+    if (!S.user?.isAdmin) { Notif.show('Admin only','Set ADMIN_EMAILS on the server to include your email, then sign in again.',5000); return; }
+    document.getElementById('create-section').style.display='';
+    document.getElementById('create-btn').style.display='none';
+  },
+
+  async create() {
+    const name=document.getElementById('cr-n').value.trim();
+    const subj=document.getElementById('cr-s').value.trim();
+    const type=document.getElementById('cr-t').value;
+    const mins=document.getElementById('cr-m').value;
+    if (!name){Notif.show('⚠','Room name required',3000);return;}
+    try {
+      const {room}=await api('POST','/api/admin/rooms',{name,subject:subj||'General',type,sessionMins:parseInt(mins,10),icon:'📚'});
+      document.getElementById('create-section').style.display='none';
+      document.getElementById('create-btn').style.display=S.user?.isAdmin?'':'none';
+      this.join(room.id);
+    } catch(e){Notif.show('⚠ Error',e.message,5000);}
+  },
+
+  join(roomId) {
+    if (!S.socket?.connected){Notif.show('⚠ Disconnected','Start the backend server first.',5000);return;}
+    // Show camera prompt
+    document.getElementById('cam-prompt').classList.add('show');
+    document.getElementById('cam-allow-btn').onclick = async()=>{ document.getElementById('cam-prompt').classList.remove('show'); await this._joinWithMedia(roomId,true); };
+    document.getElementById('cam-skip-btn').onclick = async()=>{ document.getElementById('cam-prompt').classList.remove('show'); await this._joinWithMedia(roomId,false); };
+  },
+
+  async _joinWithMedia(roomId, withVideo) {
+    if (withVideo) { await RTC.getMedia(true); }
+    else           { await RTC.getMedia(false); }
+    S.roomId=roomId; S.dms={}; S.activeDmId=null;
+    S.micOn=true; S.camOn=withVideo;
+    // reset UI
+    document.getElementById('vg').innerHTML='<div class="ld"><div class="spin"></div> Joining…</div>';
+    document.getElementById('cha').innerHTML='';
+    document.getElementById('tstart').textContent='Start';
+    document.getElementById('mic-b').textContent='🎙'; document.getElementById('mic-b').style.opacity='1';
+    document.getElementById('cam-b').textContent=withVideo?'📷':'🚫'; document.getElementById('cam-b').style.opacity=withVideo?'1':'0.5';
+    document.getElementById('brk-b').textContent='☕ Break';
+    show('sr');
+    Room.tab('timer', document.querySelector('.stab'));
+    Room.loadWeather();
+    S.socket.emit('room:join',{roomId});
+  },
+};
+
+// ══════════════════════════════════════════════════════════════
+//  ROOM
+// ══════════════════════════════════════════════════════════════
+const Room = {
+  leave() {
+    RTC.closeAll();
+    if (S.socket) { S.socket.emit('room:leave'); S.socket.emit('webrtc:peer-left',{toSocketId:'__all__'}); }
+    clearInterval(S.breakTimer);
+    S.roomId=null; S.roomData=null; S.onBreak=false;
+    document.getElementById('m-end').classList.remove('open');
+    document.getElementById('m-brk').classList.remove('open');
+    App.goLobby();
+  },
+
+  setTopbar(room) {
+    document.getElementById('rtbn').textContent=room.name;
+    const b=document.getElementById('rtbb');
+    b.className='badge '+(room.type==='neutral'?'bn':room.type==='female'?'bf':'bm');
+    b.textContent=room.type==='neutral'?'All Welcome':room.type==='female'?'Women Only':'Men Only';
+    document.getElementById('rtbc').textContent=`${room.memberCount}/${room.maxMembers}`;
+  },
+
+  renderGrid(room) {
+    const g=document.getElementById('vg');
+    if (!room.members.length){g.innerHTML='<div class="ld">Waiting for others to join…</div>';return;}
+    const mySock=S.socket?.id;
+
+    // Preserve existing tiles (to keep video streams alive)
+    const existing=new Map();
+    g.querySelectorAll('.vt').forEach(t=>existing.set(t.dataset.sock,t));
+
+    const newOrder=[];
+    room.members.forEach((m,i)=>{
+      const isMe=m.socketId===mySock;
+      let tile=existing.get(m.socketId);
+      if (!tile) {
+        tile=document.createElement('div');
+        tile.className='vt'+(isMe?' me':'')+(m.onBreak?' ob':'');
+        tile.dataset.sock=m.socketId;
+        const [bg,col]=ac(i);
+        tile.innerHTML=`
+          <div class="vta" style="background:${bg}20">
+            <div class="vtav" style="background:${bg};color:${col}">${(m.avatar||m.username).slice(0,2).toUpperCase()}</div>
+            <div style="font-size:.65rem;color:var(--muted2)">${m.camOn?'📷 On':'📷 Off'}</div>
+          </div>
+          ${m.onBreak?'<div class="obp">On Break</div>':'<div class="obp" style="display:none">On Break</div>'}
+          ${!m.camOn?'<div class="nocam">📷 off</div>':'<div class="nocam" style="display:none">📷 off</div>'}
+          <div class="speaking-ring"></div>
+          <div class="vtn">
+            <span>${m.username}${isMe?' (you)':''}</span>
+            <span class="mic-i">${m.micOn?'':'🔇'}</span>
+          </div>`;
+      }
+      existing.delete(m.socketId);
+      newOrder.push(tile);
+    });
+
+    // Remove tiles for members who left
+    existing.forEach((_,sid)=>RTC.removePeer(sid));
+
+    g.innerHTML='';
+    newOrder.forEach(t=>g.appendChild(t));
+
+    // Attach local stream to my tile
+    RTC.updateMyTile();
+  },
+
+  renderMembers(room) {
+    const el=document.getElementById('mlist');
+    const mySock=S.socket?.id;
+    el.innerHTML=`<div style="font-size:.75rem;color:var(--muted2);margin-bottom:.5rem">${room.memberCount} member${room.memberCount!==1?'s':''}</div>`+
+      room.members.map((m,i)=>{
+        const isMe=m.socketId===mySock;
+        const [bg,col]=ac(i);
+        const enc = encodeURIComponent(m.username||'');
+        const uid = encodeURIComponent(m.userId||'');
+        return `<div class="mr">
+          <div class="av av-sm" style="background:${bg};color:${col}">${(m.avatar||m.username).slice(0,2).toUpperCase()}</div>
+          <div class="mri">
+            <div class="mrn">${m.username}${isMe?' (you)':''}</div>
+            <div class="mrs">${m.onBreak?'☕ On break':m.camOn?'● Studying':'● Studying (cam off)'}</div>
+          </div>
+          ${!isMe?`<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+            <button type="button" class="cb" data-sid="${m.socketId}" data-uname="${enc}" onclick="Room.openProfileBtn(this)">Profile</button>
+            <button type="button" class="cb" onclick="Room.sendBuddy('${m.socketId}','')">Buddy</button>
+            <button type="button" class="cb" data-uid="${uid}" data-uname="${enc}" onclick="Report.openBtn(this)">Report</button>
+          </div>`:''}
+        </div>`;
+      }).join('');
+  },
+
+  syncTimer(t) {
+    const m=Math.floor(t.secondsLeft/60), s=t.secondsLeft%60;
+    document.getElementById('tclock').textContent=`${pad2(m)}:${pad2(s)}`;
+    document.getElementById('tclock').className='tclock'+(t.mode==='break'?' bk':'');
+    document.getElementById('tmode').textContent=t.mode==='focus'?'Focus Session':'☕ Break Time';
+    const fill=document.getElementById('tpf');
+    fill.style.width=((t.secondsLeft/t.totalSeconds)*100)+'%';
+    fill.className='tpf '+(t.mode==='focus'?'fo':'bk');
+    document.getElementById('tstart').textContent=t.running?'Pause':'Start';
+    const noExp = S.roomData && S.roomData.timeLeftMs === null;
+    const vote = noExp
+      ? `<span style="color:var(--muted2)">No hard room expiry</span>`
+      : `<span style="color:var(--gold);cursor:pointer" onclick="Room.voteExtend()">Vote extend</span>`;
+    const cyc = t.skipBreakCycle ? ' · No forced break between focus blocks' : '';
+    document.getElementById('sinfo').innerHTML=`Session ${t.sessionCount}${cyc} · ${vote}`;
+  },
+
+  updateExpiry(room) {
+    const wrap=document.getElementById('rtbar-wrap');
+    const lbl=document.getElementById('rexp-lbl');
+    const rtt=document.getElementById('rtt-wrap');
+    if (room.timeLeftMs === null || room.timeLeftMs === undefined) {
+      lbl.textContent='Room session';
+      document.getElementById('rexp').textContent='No time limit';
+      document.getElementById('rtff').style.width='100%';
+      if (wrap) wrap.style.opacity='0.85';
+      if (rtt) rtt.style.display='';
+      return;
+    }
+    if (wrap) wrap.style.opacity='1';
+    if (rtt) rtt.style.display='';
+    lbl.textContent='Room expires in';
+    document.getElementById('rexp').textContent=fmtTime(room.timeLeftMs);
+    document.getElementById('rtff').style.width=Math.min(100,(room.timeLeftMs/(3*60*60*1000))*100)+'%';
+  },
+
+  timerCtrl() {
+    const btn=document.getElementById('tstart').textContent;
+    if (btn==='Pause'||btn==='Resume') S.socket.emit('timer:pause');
+    else S.socket.emit('timer:start');
+  },
+
+  timerReset() { S.socket.emit('timer:reset'); },
+
+  setPom(mins, btn) {
+    document.querySelectorAll('.plen').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); S.pomMins=mins;
+    Notif.show('⏱',`Preference set: ${mins} min sessions`,2500);
+  },
+
+  next() { document.getElementById('m-end').classList.remove('open'); Notif.show('🎯 Next session!','Break is over — focus up!',3000); },
+
+  startBreak() {
+    if (S.onBreak) return;
+    S.onBreak=true; S.breakSecs=5*60;
+    S.socket.emit('break:start');
+    document.getElementById('brk-b').textContent='☕ On Break';
+    document.getElementById('m-brk').classList.add('open');
+    S.breakTimer=setInterval(()=>{
+      S.breakSecs--;
+      const m=Math.floor(S.breakSecs/60), s=S.breakSecs%60;
+      document.getElementById('bclk').textContent=`${pad2(m)}:${pad2(s)}`;
+      document.getElementById('bpf').style.width=((S.breakSecs/300)*100)+'%';
+      if (S.breakSecs<=0) Room.endBreak();
+    },1000);
+  },
+
+  endBreak() {
+    clearInterval(S.breakTimer); S.onBreak=false;
+    S.socket.emit('break:end');
+    document.getElementById('brk-b').textContent='☕ Break';
+    document.getElementById('m-brk').classList.remove('open');
+  },
+
+  toggleMic() {
+    S.micOn=!S.micOn;
+    if (S.localStream) S.localStream.getAudioTracks().forEach(t=>t.enabled=S.micOn);
+    S.socket.emit('media:toggle',{micOn:S.micOn,camOn:S.camOn});
+    const btn=document.getElementById('mic-b');
+    btn.textContent=S.micOn?'🎙':'🔇'; btn.style.opacity=S.micOn?'1':'0.5';
+    RTC.updateMyTile();
+  },
+
+  toggleCam() {
+    S.camOn=!S.camOn;
+    if (S.localStream) S.localStream.getVideoTracks().forEach(t=>t.enabled=S.camOn);
+    S.socket.emit('media:toggle',{camOn:S.camOn,micOn:S.micOn});
+    const btn=document.getElementById('cam-b');
+    btn.textContent=S.camOn?'📷':'🚫'; btn.style.opacity=S.camOn?'1':'0.5';
+    RTC.updateMyTile();
+  },
+
+  toggleMirror() { S.mirror=!S.mirror; RTC.updateMyTile(); },
+
+  appendChat(msg, notify) {
+    const ca=document.getElementById('cha');
+    const isMe=msg.socketId===S.socket?.id;
+    const d=document.createElement('div');
+    d.className='cm '+(isMe?'me':'th');
+    d.innerHTML=(isMe?'':`<div class="cma">${msg.username}</div>`)+msg.text;
+    ca.appendChild(d); ca.scrollTop=ca.scrollHeight;
+    if (notify&&!isMe) document.getElementById('cdot').style.display='';
+  },
+
+  chat() {
+    const inp=document.getElementById('ci');
+    const txt=inp.value.trim(); if(!txt) return;
+    S.socket.emit('chat:send',{text:txt}); inp.value='';
+  },
+
+  sendBuddy(toSocketId, username) {
+    S.socket.emit('buddy:request',{toSocketId});
+  },
+
+  voteExtend() {
+    if (S.roomData && S.roomData.timeLeftMs === null) {
+      S.socket.emit('room:vote-extend');
+      Notif.show('Session','This room has no hard expiry — focus blocks repeat without a forced break.',3500);
+      return;
+    }
+    S.socket.emit('room:vote-extend');
+    Notif.show('🗳 Voted','Your vote to extend was sent',3000);
+  },
+
+  tab(name, el) {
+    document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
+    if(el)el.classList.add('active');
+    document.querySelectorAll('.spane').forEach(p=>p.classList.remove('active'));
+    document.getElementById('pane-'+name).classList.add('active');
+    document.getElementById('cib-r').style.display=name==='chat'?'':'none';
+    document.getElementById('cib-dm').style.display=name==='dm'?'':'none';
+    if (name==='chat'){document.getElementById('cdot').style.display='none';setTimeout(()=>{const ca=document.getElementById('cha');ca.scrollTop=ca.scrollHeight;},50);}
+    if (name==='dm'){document.getElementById('ddot').style.display='none';DM.renderList();}
+    if (name==='desk') Desk.load();
+  },
+
+  openProfileBtn(btn) {
+    const sid = btn.getAttribute('data-sid');
+    const name = decodeURIComponent(btn.getAttribute('data-uname')||'');
+    this.openProfile(sid, name);
+  },
+
+  openProfile(socketId, displayName) {
+    S.profileToSocketId = socketId;
+    S.profileToName = displayName || 'Member';
+    document.getElementById('prof-title').textContent = S.profileToName;
+    document.getElementById('prof-msg').value = '';
+    document.getElementById('m-prof').classList.add('open');
+  },
+
+  sendProfileMsg() {
+    const txt = document.getElementById('prof-msg').value.trim();
+    if (!txt || !S.profileToSocketId || !S.socket) return;
+    S.socket.emit('room:user-message', { toSocketId: S.profileToSocketId, text: txt });
+    document.getElementById('m-prof').classList.remove('open');
+  },
+
+  theme(cls, el) {
+    document.querySelectorAll('.to').forEach(t=>t.classList.remove('active')); el.classList.add('active');
+    document.body.className=cls;
+  },
+
+  async loadWeather() {
+    const wc=document.getElementById('wcrd');
+    wc.innerHTML='<div class="ld"><div class="spin"></div> Loading weather…</div>';
+    const render=(w,mock)=>{
+      const icons={'01d':'☀️','01n':'🌙','02d':'⛅','02n':'☁️','03d':'☁️','04d':'☁️','09d':'🌧','10d':'🌦','10n':'🌧','11d':'⛈','13d':'🌨','50d':'🌫'};
+      wc.innerHTML=`<div class="wi">${icons[w.icon]||'🌤'}</div>
+        <div class="wt">${w.temp}°C</div>
+        <div class="wd">${w.description}</div>
+        <div class="wx">💧${w.humidity}% · 💨${w.wind}m/s${mock?' · (demo data)':''}</div>
+        <div class="wx">📍 ${w.city}${w.country?', '+w.country:''}</div>`;
+    };
+    try {
+      const pos=await new Promise((res,rej)=>navigator.geolocation?navigator.geolocation.getCurrentPosition(res,rej,{timeout:5000}):rej('no geo'));
+      const {weather,mock}=await api('GET',`/api/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
+      render(weather,mock);
+    } catch {
+      try { const {weather,mock}=await api('GET','/api/weather'); render(weather,true); }
+      catch { wc.innerHTML='<div style="font-size:.78rem;color:var(--muted);text-align:center;padding:.5rem">Weather unavailable</div>'; }
+    }
+  },
+};
+
+// ══════════════════════════════════════════════════════════════
+//  DESK (note + todos, saved to your account)
+// ══════════════════════════════════════════════════════════════
+const Desk = {
+  async load() {
+    if (!S.user) {
+      document.getElementById('desk-note').value = 'Sign in to sync your desk across sessions.';
+      document.getElementById('desk-todos').innerHTML = '';
+      return;
+    }
+    try {
+      const { personalNote, todos } = await api('GET', '/api/me/workspace');
+      document.getElementById('desk-note').value = personalNote || '';
+      this._todos = todos || [];
+      this.renderTodos();
+    } catch {
+      document.getElementById('desk-note').placeholder = 'Could not load workspace.';
+    }
+  },
+
+  _todos: [],
+
+  renderTodos() {
+    const el = document.getElementById('desk-todos');
+    const list = this._todos || [];
+    if (!list.length) { el.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">No tasks yet.</div>'; return; }
+    el.innerHTML = list.map((t, i) => `
+      <div class="sr2" style="align-items:flex-start;margin-bottom:6px">
+        <button type="button" class="tog${t.done?' on':''}" style="flex-shrink:0;margin-top:2px" onclick="Desk.toggle(${i})"></button>
+        <span style="flex:1;font-size:.84rem;${t.done?'opacity:.55;text-decoration:line-through':''}">${String(t.text).replace(/</g,'&lt;')}</span>
+        <button type="button" class="btn btn-no btn-sm" style="padding:2px 8px" onclick="Desk.remove(${i})">✕</button>
+      </div>`).join('');
+  },
+
+  async saveAll() {
+    if (!S.user) return;
+    const personalNote = document.getElementById('desk-note').value;
+    await api('PUT', '/api/me/workspace', { personalNote, todos: this._todos });
+  },
+
+  async saveNote() {
+    if (!S.user) { Notif.show('Sign in', 'Create an account to save your note.', 4000); return; }
+    document.getElementById('desk-note').value;
+    await this.saveAll();
+    Notif.show('Saved', 'Note stored on your profile.', 2500);
+  },
+
+  async addTodo() {
+    if (!S.user) { Notif.show('Sign in', 'Create an account to save todos.', 4000); return; }
+    const inp = document.getElementById('desk-todo-inp');
+    const text = inp.value.trim();
+    if (!text) return;
+    this._todos.push({ id: 't-' + Date.now(), text, done: false });
+    inp.value = '';
+    this.renderTodos();
+    await this.saveAll();
+  },
+
+  async toggle(i) {
+    if (!this._todos[i]) return;
+    this._todos[i].done = !this._todos[i].done;
+    this.renderTodos();
+    await this.saveAll();
+  },
+
+  async remove(i) {
+    this._todos.splice(i, 1);
+    this.renderTodos();
+    await this.saveAll();
+  },
+};
+
+// ══════════════════════════════════════════════════════════════
+//  DM
+// ══════════════════════════════════════════════════════════════
+const DM = {
+  renderList() {
+    const el=document.getElementById('dm-list');
+    const keys=Object.keys(S.dms);
+    if (!keys.length){ el.innerHTML='<div style="font-size:.8rem;color:var(--muted);text-align:center;padding:1rem">No connections yet.<br>Use Members tab to connect.</div>'; return; }
+    el.innerHTML=keys.map(id=>{
+      const dm=S.dms[id];
+      const last=dm.messages.slice(-1)[0];
+      return `<div class="dme${S.activeDmId===id?' active':''}" onclick="DM.open('${id}')">
+        <div class="dmb"></div>
+        <div>
+          <div style="font-size:.84rem">${dm.withUsername}</div>
+          ${last?`<div style="font-size:.7rem;color:var(--muted2)">${last.text.slice(0,30)}</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  },
+
+  open(dmId) {
+    S.activeDmId=dmId;
+    document.getElementById('dm-list-view').style.display='none';
+    document.getElementById('dm-chat-view').style.display='flex';
+    document.getElementById('dm-with').textContent=S.dms[dmId]?.withUsername||'';
+    document.getElementById('cib-dm').style.display='';
+    this.renderChat(dmId);
+  },
+
+  back() {
+    S.activeDmId=null;
+    document.getElementById('dm-list-view').style.display='';
+    document.getElementById('dm-chat-view').style.display='none';
+    this.renderList();
+  },
+
+  renderChat(dmId) {
+    const area=document.getElementById('dm-cha');
+    const msgs=S.dms[dmId]?.messages||[];
+    const mySock=S.socket?.id;
+    area.innerHTML=msgs.map(m=>{
+      const isMe=m.fromSocketId===mySock;
+      return `<div class="cm ${isMe?'me':'th'}">
+        ${!isMe?`<div class="cma">${m.fromUsername}</div>`:''}${m.text}
+      </div>`;
+    }).join('');
+    area.scrollTop=area.scrollHeight;
+  },
+
+  send() {
+    if (!S.activeDmId) return;
+    const inp=document.getElementById('dmi');
+    const txt=inp.value.trim(); if(!txt) return;
+    S.socket.emit('dm:send',{dmId:S.activeDmId,text:txt}); inp.value='';
+  },
+};
+
+// ══════════════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════════════
+const Dash = {
+  async open() {
+    document.getElementById('m-dash').classList.add('open');
+    document.getElementById('lo-btn').style.display=S.user?'':'none';
+    if (S.user) {
+      try {
+        const {stats}=await api('GET',`/api/stats/${S.user.id}`);
+        S.user.stats=stats;
+        const h=Math.floor(stats.totalMinutes/60), m=stats.totalMinutes%60;
+        const dow=new Date().getDay();
+        const td=stats.weeklyMinutes?.[dow]||0;
+        const th=Math.floor(td/60), tm=td%60;
+        document.getElementById('d-str').textContent=stats.streak||0;
+        document.getElementById('d-tot').textContent=`${h}h ${m}m`;
+        document.getElementById('d-tod').textContent=`${th}h ${tm}m`;
+        document.getElementById('d-ses').textContent=stats.sessionsCompleted||0;
+        document.getElementById('d-scr').textContent=Math.min(100,Math.floor((stats.sessionsCompleted||0)*2+(stats.streak||0)*5));
+        this.weekBars(stats.weeklyMinutes||[0,0,0,0,0,0,0]);
+      } catch {}
+    } else {
+      ['d-str','d-tot','d-tod','d-ses','d-scr'].forEach(id=>document.getElementById(id).textContent='Sign in');
+    }
+    try {
+      const {leaderboard}=await api('GET','/api/leaderboard');
+      const el=document.getElementById('d-lb');
+      const rk=['🥇','🥈','🥉'],rc=['g','s','b'];
+      el.innerHTML='<div class="slbl" style="margin-bottom:8px">Global Leaderboard</div>'+
+        (leaderboard.length?leaderboard.slice(0,6).map((u,i)=>`
+          <div class="lbr">
+            <div class="lbrk ${rc[i]||''}">${rk[i]||i+1}</div>
+            <div class="lbn" style="${u.id===S.user?.id?'color:var(--gold2);font-weight:500;':''}">${u.username}${u.id===S.user?.id?' (you)':''}</div>
+            <div class="lbt">${Math.floor(u.totalMinutes/60)}h ${u.totalMinutes%60}m</div>
+          </div>`).join(''):'<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:.75rem">Study to appear here!</div>');
+    } catch {}
+  },
+
+  weekBars(wm) {
+    const max=Math.max(...wm,1); const today=new Date().getDay();
+    document.getElementById('wbars').innerHTML=wm.map((v,i)=>`
+      <div style="flex:1;height:${(v/max)*100}%;background:${i===today?'var(--gold)':'var(--card2)'};border:1px solid ${i===today?'var(--gold)':'var(--border)'};border-radius:3px 3px 0 0;min-height:4px;transition:height .5s ease" title="${Math.floor(v/60)}h ${v%60}m"></div>`).join('');
+  },
+
+  close() { document.getElementById('m-dash').classList.remove('open'); },
+};
+
+// ══════════════════════════════════════════════════════════════
+//  ADMIN DASHBOARD
+// ══════════════════════════════════════════════════════════════
+const Admin = {
+  _roomsCache: [],
+  _editingRoomId: null,
+  _reportsCache: [],
+  async open() {
+    if (!S.user?.isAdmin) {
+      Notif.show('❌ Unauthorized', 'Admin access required', 4000);
+      return;
+    }
+    document.getElementById('m-admin').classList.add('open');
+    await this.loadStats();
+    await this.loadUsers();
+    await this.loadRooms();
+    await this.loadReports();
+  },
+
+  async loadStats() {
+    try {
+      const {stats}=await api('GET','/api/admin/dashboard');
+      document.getElementById('admin-total-users').textContent=stats.totalUsers;
+      document.getElementById('admin-banned').textContent=stats.bannedUsers;
+      document.getElementById('admin-admins').textContent=stats.adminUsers;
+      document.getElementById('admin-rooms').textContent=stats.totalRooms;
+    } catch(e) { Notif.show('Error', e.message, 4000); }
+  },
+
+  async loadUsers() {
+    try {
+      const {users}=await api('GET','/api/admin/users');
+      const list=document.getElementById('admin-users-list');
+      if (!users.length) { list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1rem">No users</div>'; return; }
+      list.innerHTML=users.slice(0,20).map(u=>`
+        <div style="padding:8px;border-bottom:1px solid var(--border);margin-bottom:8px;display:flex;align-items:center;gap:10px;justify-content:space-between">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:500;color:var(--cream)">${u.username}${u.isAdmin?'👑':''}</div>
+            <div style="font-size:.75rem;color:var(--muted)">${u.email}</div>
+            <div style="font-size:.7rem;color:var(--muted2);margin-top:2px">${u.stats.totalMinutes}min studied${u.banned?' • 🚫 BANNED':''}</div>
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">
+            ${u.banned?`<button class="btn-ok btn-sm" onclick="Admin.unban('${u.id}')">Unban</button>`:`<button class="btn-no btn-sm" onclick="Admin.ban('${u.id}')">Ban</button>`}
+            ${u.isAdmin?`<button class="btn-no btn-sm" onclick="Admin.toggleAdmin('${u.id}')">Demote</button>`:`<button class="btn-ok btn-sm" onclick="Admin.toggleAdmin('${u.id}')">Promote</button>`}
+            <button class="btn-no btn-sm" onclick="Admin.deleteUser('${u.id}')">Delete</button>
+            <button class="btn-g btn-sm" onclick="Admin.kickUser('${u.id}')">Kick</button>
+          </div>
+        </div>`).join('');
+    } catch(e) { Notif.show('Error', e.message, 4000); }
+  },
+
+  async loadRooms() {
+    try {
+      const {rooms}=await api('GET','/api/rooms');
+      this._roomsCache = rooms || [];
+      const list=document.getElementById('admin-rooms-list');
+      if (!rooms.length) { list.innerHTML='<div style="color:var(--muted);text-align:center;padding:1rem">No rooms</div>'; return; }
+      list.innerHTML=rooms.map(r=>`
+        <div style="padding:8px;border-bottom:1px solid var(--border);margin-bottom:8px;display:flex;align-items:center;gap:10px;justify-content:space-between">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:500;color:var(--cream)">${r.icon} ${r.name}</div>
+            <div style="font-size:.75rem;color:var(--muted)">${r.subject} • ${r.memberCount}/${r.maxMembers} • ${r.sessionMins}min</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="btn-g btn-sm" onclick="Admin.editRoom('${r.id}')">Edit</button>
+            <button class="btn-no btn-sm" onclick="Admin.deleteRoom('${r.id}')" ${r.memberCount>0?'disabled':''}>${r.memberCount>0?'In use':'Delete'}</button>
+          </div>
+        </div>`).join('');
+    } catch(e) { Notif.show('Error', e.message, 4000); }
+  },
+
+  async loadReports() {
+    const host = document.getElementById('admin-reports-list');
+    if (!host) return;
+    host.innerHTML = '<div class="ld"><div class="spin"></div> Loading reports...</div>';
+    try {
+      const { reports } = await api('GET','/api/admin/reports');
+      this._reportsCache = reports || [];
+      if (!reports?.length) {
+        host.innerHTML = '<div style="color:var(--muted);text-align:center;padding:1rem">No open reports</div>';
+        return;
+      }
+      host.innerHTML = reports.map(r => `
+        <div style="padding:10px;border:1px solid var(--border);border-radius:var(--rsm);margin-bottom:8px;background:rgba(0,0,0,.12)">
+          <div style="display:flex;gap:10px;justify-content:space-between;align-items:flex-start">
+            <div style="min-width:0;flex:1">
+              <div style="font-size:.82rem;color:var(--cream);font-weight:600">Report</div>
+              <div style="font-size:.72rem;color:var(--muted2);margin-top:2px">
+                From: ${r.reporter?.username || 'Unknown'} · Against: ${r.reported?.username || 'Guest/Unknown'} · Room: ${r.roomId || '—'}
+              </div>
+              <div style="margin-top:8px;font-size:.84rem;color:var(--cream);line-height:1.4;white-space:pre-wrap">${String(r.message||'').replace(/</g,'&lt;')}</div>
+              <div style="margin-top:6px;font-size:.7rem;color:var(--muted)">Created: ${new Date(r.createdAt).toLocaleString()}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+              <button class="btn btn-g btn-sm" onclick="Admin.actKick('${r.reportedUserId||''}')">Kick</button>
+              <button class="btn-ok btn-sm" onclick="Admin.actRestrict('${r.reportedUserId||''}', 60)">Restrict 1h</button>
+              <button class="btn-ok btn-sm" onclick="Admin.actRestrict('${r.reportedUserId||''}', 1440)">Restrict 24h</button>
+              <button class="btn-no btn-sm" onclick="Admin.actBan('${r.reportedUserId||''}')">Ban</button>
+              <button class="btn btn-g btn-sm" onclick="Admin.resolveReport('${r.id}')">Resolve</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } catch (e) {
+      host.innerHTML = '<div style="color:var(--muted);text-align:center;padding:1rem">Cannot load reports</div>';
+    }
+  },
+
+  async resolveReport(reportId) {
+    if (!reportId) return;
+    try {
+      await api('POST', `/api/admin/reports/${encodeURIComponent(reportId)}/resolve`, {});
+      Notif.show('✓ Resolved', 'Report closed', 2500);
+      await this.loadReports();
+    } catch (e) {
+      Notif.show('Error', e.message, 5000);
+    }
+  },
+
+  async actBan(userId) {
+    if (!userId) { Notif.show('Cannot ban', 'Reported user is not a logged-in account.', 4000); return; }
+    if (!confirm('Ban this user?')) return;
+    try {
+      await api('POST', `/api/admin/users/${encodeURIComponent(userId)}/ban`, {});
+      Notif.show('✓ Updated', 'User ban toggled', 2500);
+      await this.loadUsers();
+      await this.loadStats();
+    } catch (e) { Notif.show('Error', e.message, 5000); }
+  },
+
+  async actRestrict(userId, mins) {
+    if (!userId) { Notif.show('Cannot restrict', 'Reported user is not a logged-in account.', 4000); return; }
+    try {
+      await api('POST', `/api/admin/users/${encodeURIComponent(userId)}/restrict`, { minutes: mins });
+      Notif.show('✓ Restricted', `Chat restricted for ${mins} minutes`, 3000);
+      await this.loadUsers();
+    } catch (e) { Notif.show('Error', e.message, 5000); }
+  },
+
+  async actKick(userId) {
+    if (!userId) { Notif.show('Cannot kick', 'Reported user is not a logged-in account.', 4000); return; }
+    try {
+      await api('POST', `/api/admin/users/${encodeURIComponent(userId)}/kick`, {});
+      Notif.show('✓ Kicked', 'Kick signal sent', 2500);
+    } catch (e) { Notif.show('Error', e.message, 5000); }
+  },
+
+  editRoom(roomId) {
+    const r = (this._roomsCache || []).find(x => x.id === roomId);
+    if (!r) return;
+    this._editingRoomId = roomId;
+    const exists = document.getElementById('admin-room-editor');
+    if (!exists) {
+      const wrap = document.createElement('div');
+      wrap.id = 'admin-room-editor';
+      wrap.style.cssText = 'margin-top:10px;border:1px solid var(--border);border-radius:var(--rsm);padding:10px;background:var(--bg3)';
+      wrap.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:.78rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.08em">Edit room</div>
+          <button class="btn btn-g btn-sm" onclick="document.getElementById('admin-room-editor').remove()">×</button>
+        </div>
+        <div class="cr-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+          <div class="fg" style="margin-bottom:0"><label>Name</label><input type="text" id="ar-n"></div>
+          <div class="fg" style="margin-bottom:0"><label>Subject</label><input type="text" id="ar-s"></div>
+          <div class="fg" style="margin-bottom:0"><label>Icon</label><input type="text" id="ar-i" placeholder="📚"></div>
+        </div>
+        <div class="cr-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="fg" style="margin-bottom:0"><label>Type</label>
+            <select id="ar-t">
+              <option value="neutral">All Welcome</option>
+              <option value="female">Women Only</option>
+              <option value="male">Men Only</option>
+            </select>
+          </div>
+          <div class="fg" style="margin-bottom:0"><label>Session (mins)</label>
+            <select id="ar-m">
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="90">90</option>
+            </select>
+          </div>
+          <div class="fg" style="margin-bottom:0"><label>Max members</label><input type="text" id="ar-x" inputmode="numeric" placeholder="40"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-g btn-sm" onclick="Admin.cancelEdit()">Cancel</button>
+          <button class="btn btn-p btn-sm" id="ar-save" onclick="Admin.saveRoomEdits()">Save</button>
+        </div>
+        <div style="margin-top:8px;font-size:.72rem;color:var(--muted2)" id="ar-hint"></div>
+      `;
+      const host = document.getElementById('admin-rooms-list');
+      host.parentElement.appendChild(wrap);
+    }
+
+    document.getElementById('ar-n').value = r.name || '';
+    document.getElementById('ar-s').value = r.subject || '';
+    document.getElementById('ar-i').value = r.icon || '';
+    document.getElementById('ar-t').value = r.type || 'neutral';
+    document.getElementById('ar-m').value = String(r.sessionMins || 25);
+    document.getElementById('ar-x').value = String(r.maxMembers || 40);
+    document.getElementById('ar-hint').textContent =
+      r.memberCount > 0
+        ? 'Note: some fields may be locked while members are inside the room.'
+        : 'Tip: keep session lengths to 25/50/90 for consistent timers.';
+  },
+
+  cancelEdit() {
+    this._editingRoomId = null;
+    const el = document.getElementById('admin-room-editor');
+    if (el) el.remove();
+  },
+
+  async saveRoomEdits() {
+    const roomId = this._editingRoomId;
+    if (!roomId) return;
+    const btn = document.getElementById('ar-save');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      const body = {
+        name: document.getElementById('ar-n').value.trim(),
+        subject: document.getElementById('ar-s').value.trim(),
+        icon: document.getElementById('ar-i').value.trim(),
+        type: document.getElementById('ar-t').value,
+        sessionMins: parseInt(document.getElementById('ar-m').value, 10),
+        maxMembers: parseInt(document.getElementById('ar-x').value, 10),
+      };
+      await api('PATCH', `/api/admin/rooms/${encodeURIComponent(roomId)}`, body);
+      Notif.show('✓ Updated', 'Room saved', 2500);
+      await this.loadRooms();
+      await this.loadStats();
+      // keep editor open with updated values
+      this.editRoom(roomId);
+    } catch (e) {
+      Notif.show('Error', e.message, 5000);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save';
+    }
+  },
+
+  searchUsers() {
+    const q=document.getElementById('admin-search-users').value.toLowerCase();
+    const users=document.getElementById('admin-users-list').querySelectorAll('[style*="padding"]');
+    users.forEach(u=>u.style.display=u.textContent.toLowerCase().includes(q)?'':'none');
+  },
+
+  async ban(userId) {
+    if (!confirm('Ban this user?')) return;
+    try {
+      await api('POST',`/api/admin/users/${userId}/ban`);
+      Notif.show('✓ Banned', 'User banned successfully', 3000);
+      await this.loadUsers();
+      await this.loadStats();
+    } catch(e) { Notif.show('Error', e.message, 4000); }
+  },
+
+  async unban(userId) {
+    if (!confirm('Unban this user?')) return;
+    try {
+      await api('POST',`/api/admin/users/${userId}/ban`);
+      Notif.show('✓ Unbanned', 'User unbanned successfully', 3000);
+      await this.loadUsers();
+      await this.loadStats();
+    } catch(e) { Notif.show('Error', e.message, 4000); }
+  },
+
+  async toggleAdmin(userId) {
+    if (!confirm('Toggle admin status?')) return;
+    try {
+      const res=await api('POST',`/api/admin/users/${userId}/admin`);
+      Notif.show('✓ Updated', res.isAdmin?'User promoted to admin':'User demoted from admin', 3000);
+      await this.loadUsers();
+      await this.loadStats();
+    } catch(e) { Notif.show('Error', e.message, 4000); }
+  },
+
+  async deleteUser(userId) {
+    if (!confirm('PERMANENTLY delete this user account? This cannot be undone.')) return;
+    try {
+      await api('DELETE',`/api/admin/users/${userId}`);
+      Notif.show('✓ Deleted', 'User account deleted', 3000);
+      await this.loadUsers();
+      await this.loadStats();
+    } catch(e) { Notif.show('Error', e.message, 4000); }
+  },
+
+  async kickUser(userId) {
+    if (!confirm('Kick this user from all active sessions?')) return;
+    try {
+      await api('POST',`/api/admin/users/${userId}/kick`);
+      Notif.show('✓ Kicked', 'User kicked from active sessions', 3000);
+    } catch(e) { Notif.show('Error', e.message, 4000); }
+  },
+
+  async deleteRoom(roomId) {
+    if (!confirm('Delete this room?')) return;
+    try {
+      await api('DELETE',`/api/admin/rooms/${roomId}`);
+      Notif.show('✓ Deleted', 'Room deleted', 3000);
+      await this.loadRooms();
+      await this.loadStats();
+    } catch(e) { Notif.show('Error', e.message, 4000); }
+  },
+
+  close() { document.getElementById('m-admin').classList.remove('open'); },
+};
+
+// ══════════════════════════════════════════════════════════════
+//  REPORTING (roommate behavior reports)
+// ══════════════════════════════════════════════════════════════
+const Report = {
+  openBtn(btn) {
+    if (!S.user) { Notif.show('Sign in required','Create an account to report behavior.',4000); return; }
+    const uid = decodeURIComponent(btn.getAttribute('data-uid')||'');
+    const uname = decodeURIComponent(btn.getAttribute('data-uname')||'Member');
+    this.open(uid, uname);
+  },
+  open(reportedUserId, reportedUsername) {
+    S._reportToUserId = reportedUserId || '';
+    S._reportToName = reportedUsername || 'Member';
+    document.getElementById('rep-title').textContent = 'Report: ' + S._reportToName;
+    document.getElementById('rep-msg').value = '';
+    document.getElementById('m-rep').classList.add('open');
+  },
+  async send() {
+    const txt = document.getElementById('rep-msg').value.trim();
+    if (!txt) { Notif.show('Missing','Write a short description of the behavior.',3000); return; }
+    try {
+      await api('POST','/api/reports',{ reportedUserId: S._reportToUserId || null, roomId: S.roomId || null, message: txt });
+      Notif.show('Submitted','Your report was sent to admins.',3500);
+      document.getElementById('m-rep').classList.remove('open');
+    } catch (e) {
+      Notif.show('Error', e.message, 5000);
+    }
+  },
+};
+
+// ══════════════════════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════════════════════
+App.init();
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Environment secrets ───────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Persisted data (local-only; production uses PostgreSQL) ───────────────────
+server/data/
+
+# ── Prisma generated client ───────────────────────────────────────────────────
+# Keep schema.prisma but ignore the generated JS client
+node_modules/.prisma/
+
+# ── OS / Editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+*.log
